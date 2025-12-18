@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the security features implemented in the Universal Media Downloader API and how to configure them properly.
+This document describes the security features implemented in the YouTube Downloader API and how to configure them properly.
 
 ## Security Features Implemented
 
@@ -48,7 +48,7 @@ RATE_LIMIT_PER_HOUR=1000
 download_location = "../../etc/passwd"
 
 # ALLOWED - within download directory
-download_location = "C:/Media Downloads/My Videos"
+download_location = "C:/YouTube Downloads/My Videos"
 ```
 
 ### 3. Command Injection Prevention ✅

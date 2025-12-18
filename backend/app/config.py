@@ -2,18 +2,34 @@
 Application Configuration
 Manages environment variables and application settings
 """
-from pydantic_settings import BaseSettings
+from typing import TYPE_CHECKING
 from functools import lru_cache
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 import os
+
+# Make BaseSettings visible to static analyzers while keeping runtime compatibility
+if TYPE_CHECKING:
+    # Statically import from pydantic so Pylance treats it as a proper base class
+    from pydantic import BaseSettings  # type: ignore
+
+try:
+    # Prefer pydantic v2 settings package at runtime
+    from pydantic_settings import BaseSettings
+except Exception:
+    # Fall back to pydantic (v1 or compatibility)
+    from pydantic import BaseSettings
+
+# Ensure static analyzers see `BaseSettings` as a class/type
+from typing import cast, Any
+BaseSettings = cast(type, BaseSettings)  # type: ignore
 
 
 class Settings(BaseSettings):
     """Application settings from environment variables"""
 
     # Application Info
-    APP_NAME: str = "YouTube Downloader API"
+    APP_NAME: str = "Universal Media Downloader API"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True
 
@@ -23,7 +39,7 @@ class Settings(BaseSettings):
     RELOAD: bool = True
 
     # CORS Settings
-    CORS_ORIGINS: list[str] = [
+    CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://localhost:5173",  # Vite default port
         "http://127.0.0.1:3000",
@@ -37,7 +53,7 @@ class Settings(BaseSettings):
 
     # File Storage Settings
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
-    DOWNLOAD_DIR: Path = BASE_DIR.parent / "YouTube Downloads"
+    DOWNLOAD_DIR: Path = BASE_DIR / "Downloads"
     TEMP_DIR: Path = BASE_DIR / "temp"
 
     # External Tools
@@ -55,7 +71,10 @@ class Settings(BaseSettings):
     # Options: 'chrome', 'firefox', 'edge', 'opera', 'chromium', 'brave', 'safari', or None
     # Note: Brave is fully supported. Firefox with Tor proxy works normally (use 'firefox').
     # For Tor Browser specifically, use 'firefox' but cookies may be limited due to privacy settings.
+    # To support authenticated downloads (Twitter/X, etc.), set COOKIE_BROWSER and provide cookies file path
+    # Example: COOKIE_BROWSER='chrome' and COOKIES_FILE='C:/Users/YourUser/AppData/Local/Google/Chrome/User Data/Default/Cookies'
     COOKIE_BROWSER: Optional[str] = None
+    COOKIES_FILE: Optional[str] = None
 
     # WebSocket Settings
     WS_MESSAGE_QUEUE_SIZE: int = 100

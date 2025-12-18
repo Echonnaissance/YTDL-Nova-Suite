@@ -1,5 +1,5 @@
 # build-exe.ps1
-# Automated build script for YT2MP3-Converter executable
+# Automated build script for UniversalMediaDownloader executable
 
 param(
     [switch]$Clean,
@@ -7,7 +7,7 @@ param(
 )
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  YT2MP3-Converter Build Script" -ForegroundColor Cyan
+Write-Host "  UniversalMediaDownloader Build Script" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -17,7 +17,7 @@ if ($Clean -or $true) {
     
     $itemsToClean = @(
         "build",
-        "dist\YT2MP3-Converter.exe",
+        "dist\UniversalMediaDownloader.exe",
         "__pycache__"
     )
     
@@ -55,17 +55,17 @@ Write-Host ""
 $buildStart = Get-Date
 
 # Check if spec file exists, use it; otherwise build directly
-if (Test-Path "YTMP3urlConverter.spec") {
-    Write-Host "  Using spec file: YTMP3urlConverter.spec" -ForegroundColor Gray
-    pyinstaller --clean YTMP3urlConverter.spec
+if (Test-Path "UniversalMediaDownloader.spec") {
+    Write-Host "  Using spec file: UniversalMediaDownloader.spec" -ForegroundColor Gray
+    pyinstaller --clean UniversalMediaDownloader.spec
 } else {
     Write-Host "  Building with default options..." -ForegroundColor Gray
-    pyinstaller --name "YT2MP3-Converter" `
+    pyinstaller --name "UniversalMediaDownloader" `
         --onefile `
         --console `
         --clean `
         --add-data "config.example.json;." `
-        YTMP3urlConverter.py
+        UniversalMediaDownloader.py
 }
 
 $buildEnd = Get-Date
@@ -84,7 +84,7 @@ Write-Host ""
 # Step 4: Verify and test
 Write-Host "[4/4] Verifying executable..." -ForegroundColor Yellow
 
-$exePath = "dist\YT2MP3-Converter.exe"
+$exePath = "dist\UniversalMediaDownloader.exe"
 if (Test-Path $exePath) {
     $exeSize = (Get-Item $exePath).Length / 1MB
     Write-Host "  Executable found: $exePath" -ForegroundColor Green
@@ -110,8 +110,8 @@ Write-Host ""
 Write-Host "Executable location: $exePath" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Yellow
-Write-Host "  1. Test: .\dist\YT2MP3-Converter.exe --help" -ForegroundColor White
-Write-Host "  2. Test download: .\dist\YT2MP3-Converter.exe <URL> --cookies-browser firefox" -ForegroundColor White
+Write-Host "  1. Test: .\dist\UniversalMediaDownloader.exe --help" -ForegroundColor White
+Write-Host "  2. Test download: .\dist\UniversalMediaDownloader.exe <URL> --cookies-browser firefox" -ForegroundColor White
 Write-Host "  3. Distribute: Include yt-dlp.exe and ffmpeg.exe with the executable" -ForegroundColor White
 Write-Host ""
 

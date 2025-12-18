@@ -46,24 +46,26 @@ class YTDLPService:
 
     def is_valid_url(self, url: str) -> bool:
         """
-        Check if URL is supported by yt-dlp
-        Supports YouTube, Twitter/X, Instagram, TikTok, and other platforms
+        Check if URL is a valid http/https URL.
+        yt-dlp supports 1000+ sites, so we just validate the URL format
+        and let yt-dlp handle site-specific validation.
         """
-        valid_domains = [
-            # YouTube
-            "youtube.com", "youtu.be", "youtube-nocookie.com",
-            # Twitter/X
-            "x.com", "twitter.com",
-            # Instagram
-            "instagram.com",
-            # TikTok
-            "tiktok.com",
-            # Other common platforms
-            "vimeo.com", "dailymotion.com", "twitch.tv",
-            "facebook.com", "fb.watch", "reddit.com",
-            "bilibili.com", "nicovideo.jp"
-        ]
-        return any(domain in url.lower() for domain in valid_domains)
+        return url.lower().startswith(("http://", "https://"))
+
+    def _add_cookie_args(self, cmd: list) -> None:
+        """
+        Add cookie arguments to yt-dlp command.
+        Prefers cookies file over browser cookies to avoid DPAPI issues on Windows.
+        """
+        # Prefer cookies file (avoids Windows DPAPI decryption issues)
+        if settings.COOKIES_FILE:
+            import os
+            if os.path.exists(settings.COOKIES_FILE):
+                cmd.extend(["--cookies", settings.COOKIES_FILE])
+                return
+        # Fall back to browser cookies
+        if settings.COOKIE_BROWSER:
+            cmd.extend(["--cookies-from-browser", settings.COOKIE_BROWSER])
 
     def _get_video_info_sync(self, url: str) -> Dict[str, Any]:
         """Synchronous helper for get_video_info"""
@@ -73,9 +75,8 @@ class YTDLPService:
             "--no-playlist",
         ]
 
-        # Add cookie browser support if configured (needed for Twitter/X, Instagram, etc.)
-        if settings.COOKIE_BROWSER:
-            cmd.extend(["--cookies-from-browser", settings.COOKIE_BROWSER])
+        # Add cookie support (needed for Twitter/X, Instagram, etc.)
+        self._add_cookie_args(cmd)
 
         cmd.append(url)
 
@@ -127,9 +128,8 @@ class YTDLPService:
             "--dump-json",
         ]
 
-        # Add cookie browser support if configured (needed for Twitter/X, Instagram, etc.)
-        if settings.COOKIE_BROWSER:
-            cmd.extend(["--cookies-from-browser", settings.COOKIE_BROWSER])
+        # Add cookie support (needed for Twitter/X, Instagram, etc.)
+        self._add_cookie_args(cmd)
 
         cmd.append(url)
 
@@ -207,9 +207,8 @@ class YTDLPService:
             "--no-playlist",
         ]
 
-        # Add cookie browser support if configured (needed for Twitter/X, Instagram, etc.)
-        if settings.COOKIE_BROWSER:
-            cmd.extend(["--cookies-from-browser", settings.COOKIE_BROWSER])
+        # Add cookie support (needed for Twitter/X, Instagram, etc.)
+        self._add_cookie_args(cmd)
 
         cmd.append(url)
 
@@ -248,9 +247,8 @@ class YTDLPService:
             "--no-playlist",
         ]
 
-        # Add cookie browser support if configured (needed for Twitter/X, Instagram, etc.)
-        if settings.COOKIE_BROWSER:
-            cmd.extend(["--cookies-from-browser", settings.COOKIE_BROWSER])
+        # Add cookie support (needed for Twitter/X, Instagram, etc.)
+        self._add_cookie_args(cmd)
 
         if embed_thumbnail:
             cmd.append("--embed-thumbnail")

@@ -5,6 +5,7 @@ Handles HTTP endpoints for user settings
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import logging
+from typing import Any, cast, Optional
 
 from app.core.database import get_db
 from app.models.database import UserSettings
@@ -31,13 +32,13 @@ def get_or_create_settings(db: Session) -> UserSettings:
 @router.get("/", response_model=UserSettingsResponse)
 async def get_settings(db: Session = Depends(get_db)):
     """
-    Get user settings
+    Get user settings for media downloads (YouTube, Twitter/X, Instagram, TikTok, etc.)
     """
     settings = get_or_create_settings(db)
 
     # If download_location is not set, use the default from config
-    if not settings.download_location:
-        settings.download_location = str(app_settings.DOWNLOAD_DIR)
+    if not cast(Optional[str], settings.download_location):
+        cast(Any, settings).download_location = str(app_settings.DOWNLOAD_DIR)
 
     return settings
 
@@ -48,7 +49,7 @@ async def update_settings(
     db: Session = Depends(get_db)
 ):
     """
-    Update user settings
+    Update user settings for media downloads (YouTube, Twitter/X, Instagram, TikTok, etc.)
 
     SECURITY: Validates download_location to prevent path traversal attacks
     """
@@ -61,18 +62,20 @@ async def update_settings(
     if "download_location" in update_data and update_data["download_location"]:
         try:
             # Validate path to prevent path traversal
-            validated_path = validate_download_path(update_data["download_location"])
+            validated_path = validate_download_path(
+                update_data["download_location"])
             update_data["download_location"] = str(validated_path)
             logger.info(f"Download location updated to: {validated_path}")
         except ValueError as e:
-            logger.warning(f"Invalid download location rejected: {update_data['download_location']}")
+            logger.warning(
+                f"Invalid download location rejected: {update_data['download_location']}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(e)
             )
 
     for field, value in update_data.items():
-        setattr(settings, field, value)
+        setattr(cast(Any, settings), field, value)
 
     db.commit()
     db.refresh(settings)

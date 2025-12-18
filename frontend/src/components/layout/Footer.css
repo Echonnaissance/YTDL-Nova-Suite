@@ -1,0 +1,120 @@
+.footer {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  margin-top: auto;
+  padding: var(--space-8, 2rem) 0 var(--space-4, 1rem);
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-6, 1.5rem);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-8, 2rem);
+}
+
+.footer-main {
+  max-width: 400px;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  font-weight: 600;
+  font-size: var(--font-lg, 1.125rem);
+  color: var(--text-primary);
+  margin-bottom: var(--space-3, 0.75rem);
+}
+
+.footer-logo {
+  font-size: 1.5rem;
+}
+
+.footer-description {
+  color: var(--text-secondary);
+  font-size: var(--font-sm, 0.875rem);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.footer-links {
+  display: flex;
+  gap: var(--space-10, 2.5rem);
+}
+
+.footer-section h4 {
+  font-size: var(--font-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-3, 0.75rem);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.footer-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-section li {
+  margin-bottom: var(--space-2, 0.5rem);
+}
+
+.footer-section a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: var(--font-sm, 0.875rem);
+  transition: color var(--transition-fast, 150ms);
+}
+
+.footer-section a:hover {
+  color: var(--accent-color);
+}
+
+.footer-bottom {
+  max-width: 1200px;
+  margin: var(--space-6, 1.5rem) auto 0;
+  padding: var(--space-4, 1rem) var(--space-6, 1.5rem) 0;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-bottom p {
+  margin: 0;
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--text-muted, var(--text-secondary));
+}
+
+.footer-version {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  background: var(--bg-tertiary);
+  padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+  border-radius: var(--radius-sm, 4px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .footer-container {
+    grid-template-columns: 1fr;
+    gap: var(--space-6, 1.5rem);
+  }
+
+  .footer-main {
+    max-width: none;
+  }
+
+  .footer-links {
+    gap: var(--space-6, 1.5rem);
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    text-align: center;
+  }
+}

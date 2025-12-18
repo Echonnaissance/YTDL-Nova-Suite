@@ -4,6 +4,49 @@ All notable changes, improvements, and applied fixes for the YouTube Downloader 
 
 ---
 
+## [1.1.0] - 2025-12-18
+
+### UI/UX Overhaul
+
+- **Compact Layout** - Redesigned download form with all options visible on one screen
+  - Inline Video/Audio toggle buttons
+  - Compact quality and format dropdowns
+  - Streamlined video preview with small thumbnails
+  - Reduced vertical space and scrolling
+
+### New Features
+
+- **Paste Detection** - Auto-fetches video info when pasting a URL
+- **Keyboard Shortcut** - `Ctrl+Enter` (or `Cmd+Enter`) to instantly start download
+- **Clear Button** - ✕ button in URL input to quickly clear and refocus
+- **Recent URLs Dropdown** - Shows last 5 downloaded URLs (session storage)
+- **Real-time Progress Bar** - Live progress, speed, and ETA during downloads
+
+### Format Support
+
+- **New Video Formats**: MOV, AVI, WMV, OGV (via ffmpeg conversion)
+- **Existing Formats**: MP4, WebM, MKV (native), M4A, MP3, Opus (audio)
+
+### Backend Improvements
+
+- **Cookies File Support** - Added `COOKIES_FILE` environment variable as preferred method over `--cookies-from-browser` to avoid Windows DPAPI issues
+- **Universal URL Support** - Removed domain whitelist, now accepts any http/https URL (yt-dlp supports 1000+ sites)
+- **Fixed Duration Type** - Changed from `int` to `float` in schemas for accurate timestamps
+- **Download Directory** - Now uses `project/Downloads/Video` and `project/Downloads/Audio`
+
+### Bug Fixes
+
+- Fixed 422 API errors caused by middleware consuming request body
+- Fixed Pylance import errors (SQLAlchemy, Pydantic)
+- Fixed path traversal in middleware request validation
+
+### UI Clarity
+
+- Batch mode button now shows "📋 Batch" with tooltip
+- Coverart embed button now shows "🖼️ Coverart" with tooltip
+
+---
+
 ## [1.0.0] - 2025-11-26
 
 ### Major Features

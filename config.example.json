@@ -1,6 +1,7 @@
 {
   "url": "https://youtube.com/watch?v=VIDEO_ID",
   "output_dir": "Downloads/Video",
+  "cookies_file": "",
   "cookies_browser": "chrome",
   "format": "mp4",
   "quality": "best",

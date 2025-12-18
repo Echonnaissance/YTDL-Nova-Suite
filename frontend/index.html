@@ -1,12 +1,55 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta
+      name="description"
+      content="Download videos and audio from YouTube, Twitter/X, Instagram, TikTok and 1000+ sites. Free, fast, and easy to use."
+    />
+    <meta
+      name="keywords"
+      content="youtube downloader, video downloader, mp3 converter, twitter video, instagram downloader"
+    />
+    <meta name="author" content="Echonnaissance" />
+    <meta name="theme-color" content="#0d1117" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Universal Media Downloader" />
+    <meta
+      property="og:description"
+      content="Download videos and audio from YouTube, Twitter/X, Instagram, TikTok and 1000+ sites."
+    />
+
+    <!-- Performance hints -->
+    <link rel="preconnect" href="http://localhost:8000" />
+    <link rel="dns-prefetch" href="http://localhost:8000" />
+
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>YouTube Downloader</title>
+    <link rel="apple-touch-icon" href="/vite.svg" />
+
+    <title>Universal Media Downloader</title>
   </head>
   <body>
+    <!-- No JavaScript fallback -->
+    <noscript>
+      <div
+        style="
+          padding: 2rem;
+          text-align: center;
+          background: #f85149;
+          color: white;
+        "
+      >
+        Please enable JavaScript to use Universal Media Downloader.
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

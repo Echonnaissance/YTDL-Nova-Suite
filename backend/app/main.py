@@ -2,10 +2,13 @@
 FastAPI Application Entry Point
 Main application file that sets up the FastAPI app, middleware, and routes
 """
+from app.api.routes import settings as settings_router
+from app.api.routes import downloads
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
+from typing import Any, cast
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -57,7 +60,7 @@ async def lifespan(app: FastAPI):
     Lifespan context manager for startup and shutdown events
     """
     # Startup
-    print("[*] Starting YouTube Downloader API...")
+    print("[*] Starting Universal Media Downloader API...")
     print(f"[*] Version: {settings.APP_VERSION}")
     print(f"[*] Debug Mode: {settings.DEBUG}")
 
@@ -111,7 +114,7 @@ limiter = Limiter(
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="Professional YouTube video and audio downloader API",
+    description="Professional universal media downloader API",
     lifespan=lifespan,
     docs_url="/api/docs",
     redoc_url="/api/redoc",
@@ -120,7 +123,8 @@ app = FastAPI(
 
 # Attach limiter to app state
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, cast(
+    Any, _rate_limit_exceeded_handler))
 
 
 # ============================================================================
@@ -145,25 +149,24 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 
-# Request Size Validation Middleware (Enhanced with streaming enforcement)
+# Request Size Validation Middleware
 @app.middleware("http")
 async def validate_request_size(request: Request, call_next):
     """
     Validate request size to prevent memory exhaustion attacks
 
-    SECURITY: Two-layer protection:
-    1. Check Content-Length header (fast)
-    2. Enforce streaming limit (prevents spoofed headers)
+    SECURITY: Check Content-Length header to reject oversized requests early.
+    Note: Uvicorn also enforces --limit-request-line and body limits at the server level.
     """
     content_length = request.headers.get("content-length")
 
-    # First check: Content-Length header
     if content_length:
         try:
             content_length_int = int(content_length)
             if content_length_int > settings.MAX_REQUEST_SIZE:
+                client_host = request.client.host if request.client else "unknown"
                 logger.warning(
-                    f"Request too large from {request.client.host}: "
+                    f"Request too large from {client_host}: "
                     f"{content_length_int} bytes (max: {settings.MAX_REQUEST_SIZE})"
                 )
                 return JSONResponse(
@@ -175,35 +178,6 @@ async def validate_request_size(request: Request, call_next):
                 )
         except ValueError:
             pass  # Invalid Content-Length header
-
-    # SECURITY: Second check - enforce at stream level for methods with body
-    if request.method in ["POST", "PUT", "PATCH"]:
-        body_size = 0
-        chunks = []
-
-        async for chunk in request.stream():
-            body_size += len(chunk)
-            chunks.append(chunk)
-
-            # SECURITY: Enforce hard limit even if header is spoofed
-            if body_size > settings.MAX_REQUEST_SIZE:
-                logger.warning(
-                    f"Streaming request exceeded limit from {request.client.host}: "
-                    f"{body_size} bytes (header claimed: {content_length})"
-                )
-                return JSONResponse(
-                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    content={
-                        "error": "RequestTooLarge",
-                        "detail": "Request body exceeded maximum size during transfer"
-                    }
-                )
-
-        # Reconstruct request body for downstream handlers
-        async def receive():
-            return {"type": "http.request", "body": b"".join(chunks)}
-
-        request._receive = receive
 
     return await call_next(request)
 
@@ -318,7 +292,7 @@ async def root():
         "version": settings.APP_VERSION,
         "status": "online",
         "docs": "/api/docs",
-        "message": "Welcome to YouTube Downloader API! Visit /api/docs for documentation."
+        "message": "Welcome to Universal Media Downloader API! Visit /api/docs for documentation."
     }
 
 
@@ -339,8 +313,6 @@ async def health_check():
 # ============================================================================
 
 # Import and include routers
-from app.api.routes import downloads
-from app.api.routes import settings as settings_router
 
 app.include_router(downloads.router, prefix="/api")
 app.include_router(settings_router.router, prefix="/api")
@@ -357,7 +329,7 @@ if __name__ == "__main__":
 
     print(f"""
     ============================================================
-              YouTube Downloader API - Dev Server
+              Universal Media Downloader API - Dev Server
     ============================================================
       API Documentation: http://localhost:{settings.PORT}/api/docs
       ReDoc: http://localhost:{settings.PORT}/api/redoc

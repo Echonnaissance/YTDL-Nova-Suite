@@ -39,7 +39,7 @@ const useSettingsStore = create(
       })
     }),
     {
-      name: 'youtube-downloader-settings'
+      name: 'universal-media-downloader-settings'
     }
   )
 );

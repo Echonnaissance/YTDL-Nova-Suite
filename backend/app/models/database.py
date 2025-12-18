@@ -2,10 +2,13 @@
 Database Models
 SQLAlchemy ORM models for database tables
 """
-from sqlalchemy import Column, Integer, String, DateTime, Enum, Float, Boolean, Text
-from sqlalchemy.sql import func
-from app.core.database import Base
+from typing import cast
 import enum
+
+from sqlalchemy import Column, Integer, String, DateTime, Enum as SAEnum, Float, Boolean, Text
+from sqlalchemy.sql import func
+
+from app.core.database import Base
 
 
 class DownloadStatus(str, enum.Enum):
@@ -43,13 +46,14 @@ class Download(Base):
     duration = Column(Integer)  # Duration in seconds
 
     # Download configuration
-    download_type = Column(Enum(DownloadType), default=DownloadType.VIDEO)
+    download_type = Column(SAEnum(DownloadType), default=DownloadType.VIDEO)
     format = Column(String, default="mp4")  # mp4, m4a, webm, etc.
     quality = Column(String, default="best")  # best, 1080p, 720p, etc.
     embed_thumbnail = Column(Boolean, default=True)
 
     # Status tracking
-    status = Column(Enum(DownloadStatus), default=DownloadStatus.PENDING, index=True)
+    status = Column(SAEnum(DownloadStatus),
+                    default=DownloadStatus.PENDING, index=True)
     progress = Column(Float, default=0.0)  # 0.0 to 100.0
     speed = Column(String)  # Download speed (e.g., "2.5MB/s")
     eta = Column(String)  # Estimated time remaining (e.g., "00:45")
@@ -74,27 +78,27 @@ class Download(Base):
     playlist_index = Column(Integer)  # Position in playlist
     playlist_title = Column(String)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Download(id={self.id}, title='{self.title}', status={self.status})>"
 
     @property
     def is_active(self) -> bool:
         """Check if download is currently active"""
-        return self.status in [
+        return cast(bool, self.status in {
             DownloadStatus.DOWNLOADING,
             DownloadStatus.PROCESSING,
-            DownloadStatus.QUEUED
-        ]
+            DownloadStatus.QUEUED,
+        })
 
     @property
     def is_complete(self) -> bool:
         """Check if download is completed"""
-        return self.status == DownloadStatus.COMPLETED
+        return cast(bool, self.status == DownloadStatus.COMPLETED)
 
     @property
     def is_failed(self) -> bool:
         """Check if download failed"""
-        return self.status in [DownloadStatus.FAILED, DownloadStatus.CANCELLED]
+        return cast(bool, self.status in {DownloadStatus.FAILED, DownloadStatus.CANCELLED})
 
 
 class UserSettings(Base):
@@ -111,7 +115,8 @@ class UserSettings(Base):
     notifications_enabled = Column(Boolean, default=True)
 
     # Download defaults
-    default_download_type = Column(Enum(DownloadType), default=DownloadType.AUDIO)
+    default_download_type = Column(
+        SAEnum(DownloadType), default=DownloadType.AUDIO)
     default_video_quality = Column(String, default="best")
     default_audio_format = Column(String, default="m4a")
     default_embed_thumbnail = Column(Boolean, default=True)
@@ -125,5 +130,5 @@ class UserSettings(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<UserSettings(id={self.id})>"

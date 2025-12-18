@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import useSettingsStore from '../store/slices/settingsStore';
-import settingsService from '../services/settingsService';
-import './SettingsPage.css';
+import { useState, useEffect } from "react";
+import useSettingsStore from "../store/slices/settingsStore";
+import settingsService from "../services/settingsService";
+import "./SettingsPage.css";
 
 export default function SettingsPage() {
   const settings = useSettingsStore();
-  const [downloadLocation, setDownloadLocation] = useState('');
+  const [downloadLocation, setDownloadLocation] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState(null);
 
@@ -14,9 +14,9 @@ export default function SettingsPage() {
     const loadSettings = async () => {
       try {
         const data = await settingsService.getSettings();
-        setDownloadLocation(data.download_location || '');
+        setDownloadLocation(data.download_location || "");
       } catch (err) {
-        console.error('Failed to load settings:', err);
+        console.error("Failed to load settings:", err);
       }
     };
     loadSettings();
@@ -26,10 +26,18 @@ export default function SettingsPage() {
     setSaving(true);
     setSaveMessage(null);
     try {
-      await settingsService.updateSettings({ download_location: downloadLocation });
-      setSaveMessage({ type: 'success', text: 'Download location saved successfully!' });
+      await settingsService.updateSettings({
+        download_location: downloadLocation,
+      });
+      setSaveMessage({
+        type: "success",
+        text: "Download location saved successfully!",
+      });
     } catch (err) {
-      setSaveMessage({ type: 'error', text: 'Failed to save download location' });
+      setSaveMessage({
+        type: "error",
+        text: "Failed to save download location",
+      });
     } finally {
       setSaving(false);
     }
@@ -72,7 +80,9 @@ export default function SettingsPage() {
               />
               <label htmlFor="notifications">Enable notifications</label>
             </div>
-            <p className="form-help">Show notifications when downloads complete</p>
+            <p className="form-help">
+              Show notifications when downloads complete
+            </p>
           </div>
         </div>
 
@@ -84,11 +94,11 @@ export default function SettingsPage() {
 
           <div className="form-group">
             <label className="form-label">Save downloads to</label>
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: "flex", gap: "10px" }}>
               <input
                 type="text"
                 className="form-input"
-                placeholder="C:\Users\YourName\YouTube Downloads"
+                placeholder={"C:\\Users\\YourName\\Media Downloads"}
                 value={downloadLocation}
                 onChange={(e) => setDownloadLocation(e.target.value)}
                 style={{ flex: 1 }}
@@ -98,15 +108,21 @@ export default function SettingsPage() {
                 onClick={handleSaveDownloadLocation}
                 disabled={saving}
               >
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? "Saving..." : "Save"}
               </button>
             </div>
             <p className="form-help">
-              Downloads will be organized in Audio and Video subfolders.
-              {' '}Default: <code>C:\Users\Username\YouTube Downloads</code>
+              Downloads will be organized in Audio and Video subfolders.{" "}
+              Default: <code>{"C:\\Users\\Username\\Media Downloads"}</code>
             </p>
             {saveMessage && (
-              <div className={`alert ${saveMessage.type === 'success' ? 'alert-success' : 'alert-error'}`}>
+              <div
+                className={`alert ${
+                  saveMessage.type === "success"
+                    ? "alert-success"
+                    : "alert-error"
+                }`}
+              >
                 {saveMessage.text}
               </div>
             )}
@@ -181,7 +197,9 @@ export default function SettingsPage() {
                 checked={settings.embedThumbnail}
                 onChange={(e) => settings.setEmbedThumbnail(e.target.checked)}
               />
-              <label htmlFor="embedThumbnail">Embed thumbnail in audio files</label>
+              <label htmlFor="embedThumbnail">
+                Embed thumbnail in audio files
+              </label>
             </div>
           </div>
         </div>
@@ -191,7 +209,7 @@ export default function SettingsPage() {
           <button
             className="btn btn-danger"
             onClick={() => {
-              if (confirm('Reset all settings to defaults?')) {
+              if (confirm("Reset all settings to defaults?")) {
                 settings.resetSettings();
               }
             }}

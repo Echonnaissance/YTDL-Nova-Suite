@@ -6,7 +6,7 @@ export default function DownloadPage() {
     <div className="download-page">
       <div className="page-header">
         <h1>New Download</h1>
-        <p className="page-subtitle">Download videos and audio from YouTube</p>
+        <p className="page-subtitle">Download videos and audio from YouTube, Twitter/X, Instagram, TikTok, and more</p>
       </div>
       <DownloadForm />
     </div>

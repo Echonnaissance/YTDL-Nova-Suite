@@ -15,23 +15,32 @@ from app.models.database import DownloadStatus, DownloadType
 
 class DownloadRequest(BaseModel):
     """Request schema for creating a new download"""
-    url: str = Field(..., description="YouTube video or playlist URL")
-    download_type: DownloadType = Field(DownloadType.AUDIO, description="Type of download")
-    quality: str = Field("best", description="Video quality (best, 1080p, 720p, etc.)")
-    format: str = Field("m4a", description="Output format (mp4, m4a, webm, etc.)")
-    embed_thumbnail: bool = Field(True, description="Embed thumbnail in audio files")
+    url: str = Field(...,
+                     description="Media URL (YouTube, Twitter/X, Instagram, TikTok, etc.)")
+    download_type: DownloadType = Field(
+        DownloadType.AUDIO, description="Type of download")
+    quality: str = Field(
+        "best", description="Video quality (best, 1080p, 720p, etc.)")
+    format: str = Field(
+        "m4a", description="Output format (mp4, m4a, webm, etc.)")
+    embed_thumbnail: bool = Field(
+        True, description="Embed thumbnail in audio files")
 
     # SECURITY: Whitelist allowed values to prevent injection
-    ALLOWED_QUALITIES: ClassVar[list[str]] = ["best", "worst", "2160p", "1440p", "1080p", "720p", "480p", "360p", "240p", "144p"]
-    ALLOWED_VIDEO_FORMATS: ClassVar[list[str]] = ["mp4", "webm", "mkv", "flv", "avi"]
-    ALLOWED_AUDIO_FORMATS: ClassVar[list[str]] = ["m4a", "mp3", "opus", "vorbis", "flac", "wav", "aac"]
+    ALLOWED_QUALITIES: ClassVar[list[str]] = [
+        "best", "worst", "2160p", "1440p", "1080p", "720p", "480p", "360p", "240p", "144p"]
+    ALLOWED_VIDEO_FORMATS: ClassVar[list[str]] = [
+        "mp4", "webm", "mkv", "flv", "avi"]
+    ALLOWED_AUDIO_FORMATS: ClassVar[list[str]] = [
+        "m4a", "mp3", "opus", "vorbis", "flac", "wav", "aac"]
 
     @field_validator("url")
     @classmethod
     def validate_url(cls, v: str) -> str:
-        """Validate that URL looks like a YouTube URL"""
-        if not any(domain in v.lower() for domain in ["youtube.com", "youtu.be"]):
-            raise ValueError("Must be a valid YouTube URL")
+        """Validate that URL looks like a supported media URL"""
+        # Accept any URL, let backend service check support
+        if not v.lower().startswith("http"):
+            raise ValueError("Must be a valid URL")
         return v
 
     @field_validator("quality")
@@ -39,7 +48,8 @@ class DownloadRequest(BaseModel):
     def validate_quality(cls, v: str) -> str:
         """SECURITY: Whitelist quality values to prevent command injection"""
         if v not in cls.ALLOWED_QUALITIES:
-            raise ValueError(f"Quality must be one of: {', '.join(cls.ALLOWED_QUALITIES)}")
+            raise ValueError(
+                f"Quality must be one of: {', '.join(cls.ALLOWED_QUALITIES)}")
         return v
 
     @field_validator("format")
@@ -48,7 +58,8 @@ class DownloadRequest(BaseModel):
         """SECURITY: Whitelist format values to prevent command injection"""
         all_formats = cls.ALLOWED_VIDEO_FORMATS + cls.ALLOWED_AUDIO_FORMATS
         if v not in all_formats:
-            raise ValueError(f"Format must be one of: {', '.join(all_formats)}")
+            raise ValueError(
+                f"Format must be one of: {', '.join(all_formats)}")
         return v
 
     class Config:
@@ -69,7 +80,7 @@ class DownloadResponse(BaseModel):
     url: str
     title: Optional[str] = None
     thumbnail_url: Optional[str] = None
-    duration: Optional[int] = None
+    duration: Optional[float] = None  # seconds (can be fractional)
     download_type: DownloadType
     format: str
     quality: str
@@ -120,9 +131,9 @@ class VideoInfoRequest(BaseModel):
     @field_validator("url")
     @classmethod
     def validate_url(cls, v: str) -> str:
-        """Validate that URL looks like a YouTube URL"""
-        if not any(domain in v.lower() for domain in ["youtube.com", "youtu.be"]):
-            raise ValueError("Must be a valid YouTube URL")
+        """Validate that URL looks like a supported media URL"""
+        if not v.lower().startswith("http"):
+            raise ValueError("Must be a valid URL")
         return v
 
 
@@ -131,7 +142,7 @@ class VideoInfoResponse(BaseModel):
     url: str
     title: str
     thumbnail_url: Optional[str] = None
-    duration: int  # seconds
+    duration: float  # seconds (can be fractional)
     uploader: Optional[str] = None
     view_count: Optional[int] = None
     is_playlist: bool = False
@@ -144,7 +155,7 @@ class PlaylistVideoInfo(BaseModel):
     title: str
     url: str
     thumbnail_url: Optional[str] = None
-    duration: Optional[int] = None
+    duration: Optional[float] = None
 
 
 class PlaylistInfoResponse(BaseModel):

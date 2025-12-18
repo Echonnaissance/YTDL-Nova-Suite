@@ -34,7 +34,8 @@ class DownloadService:
         """
         # Validate URL
         if not self.ytdlp.is_valid_url(request.url):
-            raise InvalidURLError("Invalid YouTube URL")
+            raise InvalidURLError(
+                "Invalid or unsupported URL. Please provide a link from a supported platform (YouTube, Twitter/X, Instagram, TikTok, etc.)")
 
         # Get video information
         video_info = await self.ytdlp.get_video_info(request.url)
@@ -63,7 +64,8 @@ class DownloadService:
         """
         Get download by ID
         """
-        download = self.db.query(Download).filter(Download.id == download_id).first()
+        download = self.db.query(Download).filter(
+            Download.id == download_id).first()
 
         if not download:
             raise DownloadNotFoundError(f"Download {download_id} not found")
@@ -114,7 +116,8 @@ class DownloadService:
         """
         Update download status and progress
         """
-        download = self.db.query(Download).filter(Download.id == download_id).first()
+        download = self.db.query(Download).filter(
+            Download.id == download_id).first()
 
         if not download:
             raise DownloadNotFoundError(f"Download {download_id} not found")
@@ -157,7 +160,8 @@ class DownloadService:
         """
         Update file information for a download
         """
-        download = self.db.query(Download).filter(Download.id == download_id).first()
+        download = self.db.query(Download).filter(
+            Download.id == download_id).first()
 
         if not download:
             raise DownloadNotFoundError(f"Download {download_id} not found")
@@ -179,7 +183,8 @@ class DownloadService:
         """
         Delete a download record
         """
-        download = self.db.query(Download).filter(Download.id == download_id).first()
+        download = self.db.query(Download).filter(
+            Download.id == download_id).first()
 
         if not download:
             raise DownloadNotFoundError(f"Download {download_id} not found")
@@ -202,7 +207,8 @@ class DownloadService:
         """
         Retry a failed download
         """
-        download = self.db.query(Download).filter(Download.id == download_id).first()
+        download = self.db.query(Download).filter(
+            Download.id == download_id).first()
 
         if not download:
             raise DownloadNotFoundError(f"Download {download_id} not found")

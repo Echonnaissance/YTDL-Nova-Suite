@@ -2,7 +2,7 @@
 Downloads API Routes
 Handles HTTP endpoints for download operations
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Body
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from slowapi import Limiter
@@ -48,13 +48,13 @@ def get_download_service(db: Session = Depends(get_db)) -> DownloadService:
 @limiter.limit(f"{settings.RATE_LIMIT_PER_MINUTE}/minute")
 async def create_download(
     request: Request,
-    download_request: DownloadRequest,
+    download_request: DownloadRequest = Body(...),
     service: DownloadService = Depends(get_download_service)
 ):
     """
     Create a new download
 
-    - **url**: YouTube video or playlist URL
+    - **url**: Media URL (YouTube, Twitter/X, Instagram, TikTok, etc.)
     - **download_type**: Type of download (video, audio, playlist)
     - **quality**: Video quality (best, 1080p, 720p, etc.)
     - **format**: Output format (mp4, m4a, webm, etc.)
@@ -64,6 +64,19 @@ async def create_download(
 
     SECURITY: Rate limited to prevent abuse, URL sanitized to prevent command injection
     """
+    # Log the raw request body and headers for debugging
+    raw_body = await request.body()
+    logger.error(f"RAW REQUEST BODY: {raw_body}")
+    logger.error(f"REQUEST HEADERS: {dict(request.headers)}")
+    logger.error(f"PARSED download_request: {download_request}")
+    # Validate download_request and url
+    if download_request is None or getattr(download_request, "url", None) is None:
+        logger.error(
+            f"Missing or invalid download_request: {download_request}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request body must include a valid 'url' field."
+        )
     try:
         # SECURITY: Sanitize URL to prevent command injection
         download_request.url = sanitize_url(download_request.url)
@@ -85,7 +98,8 @@ async def create_download(
         return download
     except ValueError as e:
         # URL sanitization failed
-        logger.warning(f"Invalid URL rejected: {download_request.url}")
+        logger.warning(
+            f"Invalid URL rejected: {getattr(download_request, 'url', None)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
@@ -105,8 +119,10 @@ async def create_download(
 @router.get("/", response_model=List[DownloadResponse])
 async def get_all_downloads(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
-    status: Optional[DownloadStatus] = Query(None, description="Filter by status"),
+    limit: int = Query(100, ge=1, le=1000,
+                       description="Maximum number of records to return"),
+    status: Optional[DownloadStatus] = Query(
+        None, description="Filter by status"),
     service: DownloadService = Depends(get_download_service)
 ):
     """
@@ -218,16 +234,17 @@ async def retry_download(
 
 
 @router.post("/video-info", response_model=VideoInfoResponse)
-@limiter.limit(f"{settings.RATE_LIMIT_PER_MINUTE}/minute")  # SECURITY: Rate limit info endpoint
+# SECURITY: Rate limit info endpoint
+@limiter.limit(f"{settings.RATE_LIMIT_PER_MINUTE}/minute")
 async def get_video_info(
     request: Request,
     video_info_request: VideoInfoRequest,
     service: DownloadService = Depends(get_download_service)
 ):
     """
-    Get information about a YouTube video without downloading
+    Get information about a video from a supported platform without downloading
 
-    - **url**: YouTube video URL
+    - **url**: Media URL (YouTube, Twitter/X, Instagram, TikTok, etc.)
 
     Returns video metadata (title, duration, thumbnail, etc.)
 
@@ -240,7 +257,8 @@ async def get_video_info(
         info = await service.ytdlp.get_video_info(video_info_request.url)
         return info
     except ValueError as e:
-        logger.warning(f"Invalid URL rejected in video-info: {video_info_request.url}")
+        logger.warning(
+            f"Invalid URL rejected in video-info: {video_info_request.url}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
@@ -258,16 +276,17 @@ async def get_video_info(
 
 
 @router.post("/playlist-info", response_model=PlaylistInfoResponse)
-@limiter.limit(f"{settings.RATE_LIMIT_PER_MINUTE}/minute")  # SECURITY: Rate limit info endpoint
+# SECURITY: Rate limit info endpoint
+@limiter.limit(f"{settings.RATE_LIMIT_PER_MINUTE}/minute")
 async def get_playlist_info(
     request: Request,
     playlist_info_request: VideoInfoRequest,
     service: DownloadService = Depends(get_download_service)
 ):
     """
-    Get information about a YouTube playlist without downloading
+    Get information about a playlist from a supported platform without downloading
 
-    - **url**: YouTube playlist URL
+    - **url**: Playlist URL (YouTube, etc.)
 
     Returns playlist metadata (title, video count, video list, etc.)
 
@@ -280,7 +299,8 @@ async def get_playlist_info(
         info = await service.ytdlp.get_playlist_info(playlist_info_request.url)
         return info
     except ValueError as e:
-        logger.warning(f"Invalid URL rejected in playlist-info: {playlist_info_request.url}")
+        logger.warning(
+            f"Invalid URL rejected in playlist-info: {playlist_info_request.url}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
@@ -298,7 +318,8 @@ async def get_playlist_info(
 
 
 @router.post("/batch", response_model=List[DownloadResponse], status_code=status.HTTP_201_CREATED)
-@limiter.limit(f"{settings.RATE_LIMIT_PER_HOUR}/hour")  # Stricter limit for batch
+# Stricter limit for batch
+@limiter.limit(f"{settings.RATE_LIMIT_PER_HOUR}/hour")
 async def create_batch_downloads(
     request: Request,
     requests: List[DownloadRequest],

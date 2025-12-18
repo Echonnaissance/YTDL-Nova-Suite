@@ -1,9 +1,42 @@
+# Universal Media Downloader
+
+A modern, full-stack universal media downloader built with FastAPI (backend) and React (frontend). Supports YouTube, Twitter/X, Instagram, TikTok, and more.
+
+- Place `ffmpeg.exe` and `yt-dlp.exe` in the project root (same directory as `backend/` and `frontend/`).
+  - [yt-dlp Download](https://github.com/yt-dlp/yt-dlp/releases)
+    UniversalMediaDownloader/
+    ├── yt-dlp.exe
+- Download video/audio from YouTube, Twitter/X, Instagram, TikTok, and more.
+- **yt-dlp** - Universal video/audio downloader
+  UniversalMediaDownloader/
+  │ │ │ └── ytdlp_service.py # yt-dlp wrapper
+  ├── yt-dlp.exe # Video downloader
+- **yt-dlp.exe** - Download from [yt-dlp releases](https://github.com/yt-dlp/yt-dlp/releases)
+  Place `yt-dlp.exe` and `ffmpeg.exe` in the project root directory.
+  "url": "https://media.com/watch?v=...",
+  "url": "https://media.com/watch?v=..."
+  DATABASE_URL=sqlite:///./universal_media_downloader.db
+  **"yt-dlp.exe not found"**
+- Download yt-dlp.exe from [GitHub releases](https://github.com/yt-dlp/yt-dlp/releases)
+- Download yt-dlp.exe from [GitHub releases](https://github.com/yt-dlp/yt-dlp/releases)
+- Download yt-dlp.exe from [GitHub releases](https://github.com/yt-dlp/yt-dlp/releases)
+- Download yt-dlp.exe from [GitHub releases](https://github.com/yt-dlp/yt-dlp/releases)
+- Delete `universal_media_downloader.db` file
+  The project includes a standalone command-line script (`UniversalMediaDownloader.py`) for quick downloads without running the full web application.
+  python UniversalMediaDownloader.py https://media.com/watch?v=VIDEO_ID
+  python UniversalMediaDownloader.py https://media.com/watch?v=VIDEO_ID
+  python UniversalMediaDownloader.py https://x.com/user/status/123456 --cookies-browser chrome --output-dir Downloads/Video
+  python UniversalMediaDownloader.py --config config.json
+- `--yt-dlp-path` - Custom path to yt-dlp executable (auto-detected if not specified)
+  "url": "https://media.com/watch?v=VIDEO_ID",
+  The standalone script supports all platforms that yt-dlp supports, including:
+
 # YouTube Downloader
 
-**Version:** 1.0.0  
-**Last Updated:** 2025-11-26
+**Version:** 1.1.0  
+**Last Updated:** 2025-12-18
 
-A modern, full-stack video/audio downloader built with FastAPI (backend) and React (frontend). Supports YouTube, Twitter/X, Instagram, TikTok, and more.
+A modern, full-stack video/audio downloader built with FastAPI (backend) and React (frontend). Supports YouTube, Twitter/X, Instagram, TikTok, and 1000+ sites via yt-dlp.
 
 ---
 
@@ -53,6 +86,21 @@ YT2MP3url/
 - User settings persistence
 - Modern, responsive UI
 - Standalone CLI script
+
+### UX Features (v1.1.0)
+
+- **Compact Layout** - All options visible without scrolling
+- **Paste Detection** - Auto-fetches video info when pasting URL
+- **Keyboard Shortcut** - `Ctrl+Enter` to download instantly
+- **Clear Button** - Quick ✕ to clear URL input
+- **Recent URLs** - Dropdown of last 5 downloaded URLs
+- **Real-time Progress** - Live progress bar with speed and ETA
+
+### Supported Formats
+
+- **Video**: MP4, WebM, MKV, MOV, AVI, WMV, OGV
+- **Audio**: M4A, MP3, Opus
+- **Quality**: Best, 1080p, 720p, 480p
 
 ### Backend (FastAPI)
 
@@ -627,16 +675,34 @@ python YTMP3urlConverter.py --config config.json
 
 - `url` - URL to download (required, unless using --config)
 - `--output-dir` - Output directory (default: Downloads/Video)
-- `--cookies-browser` - Browser for cookies (chrome, firefox, edge, brave, etc.) - Required for Twitter/X
-  - **Brave**: Fully supported (recommended if it's your main browser)
-  - **Firefox with Tor proxy**: Use `firefox` - proxy routing doesn't affect cookie access
-  - **Tor Browser**: Use `firefox`, but cookies may be limited due to privacy settings
-- `--format` - Output format: mp4, webm, mkv, flv (default: mp4)
+- `--cookies-browser` - Browser for cookies (chrome, firefox, edge, brave, etc.)
+- `--cookies-file` - Path to exported cookies file (Netscape format) - **Recommended for Twitter/X**
+  - Use a browser extension like "Get cookies.txt LOCALLY" to export cookies
+  - Avoids Windows DPAPI decryption issues with `--cookies-browser`
+- `--format` - Output format: mp4, webm, mkv, mov, avi, wmv, ogv (default: mp4)
 - `--quality` - Video quality: best, 1080p, 720p, 480p (default: best)
 - `--yt-dlp-path` - Custom path to yt-dlp executable (auto-detected if not specified)
 - `--ffmpeg-path` - Custom path to ffmpeg executable (auto-detected if not specified)
 - `--config` - Path to JSON configuration file
 - `--verbose, -v` - Enable verbose logging
+
+### Cookie Authentication (for Twitter/X, Instagram, etc.)
+
+**Option 1: Cookies File (Recommended)**
+
+Export cookies using a browser extension and set in `.env`:
+
+```
+COOKIES_FILE=C:\path\to\cookies.txt
+```
+
+**Option 2: Browser Cookies**
+
+```
+COOKIE_BROWSER=brave
+```
+
+Note: May fail on Windows due to DPAPI encryption. Use cookies file if you see decryption errors.
 
 ### Configuration File
 
@@ -657,6 +723,7 @@ Create a `config.json` file (see `config.example.json`):
 The standalone script supports all platforms that yt-dlp supports, including:
 
 - YouTube
+- **yt-dlp** - Powerful video downloader
 - Twitter/X (requires `--cookies-browser`)
 - Instagram
 - TikTok
