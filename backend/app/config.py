@@ -5,6 +5,7 @@ Manages environment variables and application settings
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 from pathlib import Path
+from typing import Optional
 import os
 
 
@@ -49,6 +50,12 @@ class Settings(BaseSettings):
     DEFAULT_VIDEO_FORMAT: str = "mp4"
     DEFAULT_AUDIO_FORMAT: str = "m4a"
     DEFAULT_QUALITY: str = "best"
+
+    # Cookie Browser (for Twitter/X and other platforms that require authentication)
+    # Options: 'chrome', 'firefox', 'edge', 'opera', 'chromium', 'brave', 'safari', or None
+    # Note: Brave is fully supported. Firefox with Tor proxy works normally (use 'firefox').
+    # For Tor Browser specifically, use 'firefox' but cookies may be limited due to privacy settings.
+    COOKIE_BROWSER: Optional[str] = None
 
     # WebSocket Settings
     WS_MESSAGE_QUEUE_SIZE: int = 100
@@ -105,7 +112,9 @@ class Settings(BaseSettings):
                         "Wildcard CORS origins (*) are not allowed in production. "
                         "Specify exact domains for security."
                     )
-            logger.info(f"CORS origins validated for production: {self.CORS_ORIGINS}")
+            import logging
+            logging.getLogger(__name__).info(
+                f"CORS origins validated for production: {self.CORS_ORIGINS}")
 
     # Logging
     LOG_LEVEL: str = "INFO"

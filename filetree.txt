@@ -1,0 +1,128 @@
+idk actually. i'll just share the filetree.txt:
+YT2MP3url/
+├─ .claude/
+│  └─ settings.local.json
+├─ .qodo/
+│  ├─ agents/
+│  └─ workflows/
+├─ .vscode/
+│  ├─ c_cpp_properties.json
+│  ├─ launch.json
+│  └─ settings.json
+├─ backend/
+│  ├─ app/
+│  │  ├─ __pycache__/
+...
+│  │  ├─ Scripts/
+│  │  └─ pyvenv.cfg
+│  ├─ .env
+│  ├─ .env.example
+│  ├─ generate_keys.py
+│  ├─ requirements.txt
+│  ├─ SECURITY_FIXES_APPLIED.md
+│  ├─ SECURITY_IMPLEMENTATION.md
+│  └─ youtube_downloader.db
+├─ Backup/
+│  └─ YTMP3urlConverter_backup.py
+├─ build/
+│  ├─ AudioVideoConverter/
+│  │  ├─ localpycs/
+│  │  │  ├─ pyimod01_archive.pyc
+│  │  │  ├─ pyimod02_importers.pyc
+│  │  │  ├─ pyimod03_ctypes.pyc
+│  │  │  ├─ pyimod04_pywin32.pyc
+│  │  │  └─ struct.pyc
+│  │  ├─ Analysis-00.toc
+│  │  ├─ AudioVideoConverter.pkg
+│  │  ├─ base_library.zip
+│  │  ├─ PKG-00.toc
+│  │  ├─ PYZ-00.pyz
+│  │  ├─ PYZ-00.toc
+│  │  ├─ warn-AudioVideoConverter.txt
+│  │  └─ xref-AudioVideoConverter.html
+│  └─ YouTube Downloader/
+│     ├─ localpycs/
+│     │  ├─ pyimod01_archive.pyc
+│     │  ├─ pyimod02_importers.pyc
+│     │  ├─ pyimod03_ctypes.pyc
+│     │  ├─ pyimod04_pywin32.pyc
+│     │  └─ struct.pyc
+│     ├─ Analysis-00.toc
+│     ├─ base_library.zip
+│     ├─ EXE-00.toc
+│     ├─ PKG-00.toc
+│     ├─ PYZ-00.pyz
+│     ├─ PYZ-00.toc
+│     ├─ warn-YouTube Downloader.txt
+│     ├─ xref-YouTube Downloader.html
+│     └─ YouTube Downloader.pkg
+├─ dist/
+│  ├─ config.json
+│  ├─ ffmpeg.exe
+│  ├─ YouTube Downloader.exe
+│  └─ yt-dlp.exe
+├─ Downloads/
+│  ├─ Audio/
+│  │  └─ 退廃的人生讃歌 ⧸ 重音テト.m4a
+│  └─ Video/
+├─ frontend/
+│  ├─ public/
+│  ├─ src/
+│  │  ├─ components/
+│  │  │  ├─ common/
+│  │  │  ├─ features/
+│  │  │  │  ├─ DownloadForm/
+│  │  │  │  ├─ History/
+│  │  │  │  ├─ Queue/
+│  │  │  │  ├─ DownloadForm.css
+│  │  │  │  ├─ DownloadForm.jsx
+│  │  │  │  ├─ DownloadList.css
+│  │  │  │  ├─ DownloadList.jsx
+│  │  │  │  ├─ PlaylistPreview.css
+│  │  │  │  └─ PlaylistPreview.jsx
+│  │  │  └─ layout/
+│  │  │     ├─ Navigation.css
+│  │  │     └─ Navigation.jsx
+│  │  ├─ hooks/
+│  │  ├─ pages/
+│  │  │  ├─ DownloadPage.css
+│  │  │  ├─ DownloadPage.jsx
+│  │  │  ├─ HistoryPage.css
+│  │  │  ├─ HistoryPage.jsx
+│  │  │  ├─ HomePage.css
+│  │  │  ├─ HomePage.jsx
+│  │  │  ├─ SettingsPage.css
+│  │  │  └─ SettingsPage.jsx
+│  │  ├─ services/
+│  │  │  ├─ api.js
+│  │  │  ├─ downloadService.js
+│  │  │  └─ settingsService.js
+│  │  ├─ store/
+│  │  │  └─ slices/
+│  │  │     ├─ downloadStore.js
+│  │  │     └─ settingsStore.js
+│  │  ├─ styles/
+│  │  │  └─ global.css
+│  │  ├─ utils/
+│  │  ├─ App.jsx
+│  │  └─ main.jsx
+│  ├─ index.html
+│  ├─ package-lock.json
+│  ├─ package.json
+│  └─ vite.config.js
+├─ shared/
+├─ temp/
+├─ .env.example
+├─ .gitignore
+├─ CHANGELOG.md
+├─ config.json
+├─ CONTRIBUTING.md
+├─ DEPLOYMENT.md
+├─ README.md
+├─ SECURITY.md
+├─ start-dev.bat
+├─ ThumbnailError.png
+├─ twitter_yt-dlp_commands.txt
+├─ YouTube Downloader.spec
+├─ yt-dlp.exe
+└─ YTMP3urlConverter.py

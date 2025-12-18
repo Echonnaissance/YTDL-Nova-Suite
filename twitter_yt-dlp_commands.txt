@@ -1,0 +1,20 @@
+# Preview a single tweet (title + duration, no download)
+yt-dlp --cookies-from-browser chrome --print "%(title)s | %(duration_string)s" TWEET_URL
+
+# Download a single tweet video
+yt-dlp --cookies-from-browser chrome -f "bv*+ba/b" --merge-output-format mp4 TWEET_URL
+
+# Preview multiple tweet URLs from a file (no download)
+yt-dlp --cookies-from-browser chrome -a urls.txt --print "%(title)s | %(duration_string)s | %(webpage_url)s"
+
+# Download approved tweet URLs from a file
+yt-dlp --cookies-from-browser chrome -a urls.txt -f "bv*+ba/b" --merge-output-format mp4
+
+# Auto-download videos from a specific account
+yt-dlp --cookies-from-browser chrome -f "bv*+ba/b" --merge-output-format mp4 https://example.com/USERNAME
+
+# Auto-download ONLY videos under 30 minutes from an account
+yt-dlp --cookies-from-browser chrome --match-filter "duration < 1800" -f "bv*+ba/b" --merge-output-format mp4 https://example.com/USERNAME
+
+# Auto-download new videos only (no duplicates)
+yt-dlp --cookies-from-browser chrome --download-archive archive.txt -f "bv*+ba/b" --merge-output-format mp4 https://example.com/USERNAME

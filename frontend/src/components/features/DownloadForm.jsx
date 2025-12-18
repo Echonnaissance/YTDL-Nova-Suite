@@ -27,8 +27,9 @@ export default function DownloadForm() {
   const [playlistInfo, setPlaylistInfo] = useState(null);
 
   const validateUrl = (urlString) => {
-    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
-    return youtubeRegex.test(urlString);
+    // Support multiple platforms: YouTube, Twitter/X, Instagram, TikTok, etc.
+    const urlPattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|x\.com|twitter\.com|instagram\.com|tiktok\.com|vimeo\.com|dailymotion\.com|twitch\.tv|facebook\.com|fb\.watch|reddit\.com|bilibili\.com|nicovideo\.jp)\/.+$/;
+    return urlPattern.test(urlString);
   };
 
   const handleFetchInfo = async () => {
@@ -38,7 +39,7 @@ export default function DownloadForm() {
     }
 
     if (!validateUrl(url)) {
-      setError('Please enter a valid YouTube URL');
+      setError('Please enter a valid URL from a supported platform (YouTube, Twitter/X, Instagram, TikTok, etc.)');
       return;
     }
 
@@ -97,7 +98,7 @@ export default function DownloadForm() {
 
       for (const u of urls) {
         if (!validateUrl(u.trim())) {
-          setError(`Invalid YouTube URL: ${u}`);
+          setError(`Invalid URL: ${u}. Please provide a valid URL from a supported platform.`);
           return;
         }
       }

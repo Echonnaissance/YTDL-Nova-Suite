@@ -1,63 +1,300 @@
 # Deployment Guide
 
-This guide covers deploying the YouTube Downloader application to production environments.
+# Deployment, Build & Browser Setup Guide
 
-**Version**: 1.0.0
-**Last Updated**: 2025-11-26
+**Version:** 1.0.0  
+**Last Updated:** 2025-11-26
 
 ---
 
 ## Table of Contents
 
-- [Pre-Deployment Checklist](#pre-deployment-checklist)
-- [Deployment Options](#deployment-options)
-- [Server Requirements](#server-requirements)
-- [Production Setup](#production-setup)
-- [Deployment Methods](#deployment-methods)
-  - [Traditional Server Deployment](#traditional-server-deployment)
-  - [Docker Deployment](#docker-deployment-planned)
-  - [Cloud Platform Deployment](#cloud-platform-deployment)
-- [Post-Deployment](#post-deployment)
-- [Monitoring & Maintenance](#monitoring--maintenance)
-- [Troubleshooting](#troubleshooting)
-- [Rollback Procedures](#rollback-procedures)
+- Pre-Deployment Checklist
+- Build Guide (Windows Executable)
+- Deployment Options
+- Server Requirements
+- Production Setup
+- Deployment Methods (Server, Docker, Cloud)
+
+# Deployment, Build & Browser Setup Guide
+
+**Version:** 1.0.0  
+**Last Updated:** 2025-12-18
+
+---
+
+## Table of Contents
+
+- Pre-Deployment Checklist
+- Build Guide (Windows Executable)
+- Automated Build Script
+- Browser Setup for Cookie Authentication
+- Deployment Options
+- Server Requirements
+- Production Setup
+- Deployment Methods (Server, Docker, Cloud)
+- Post-Deployment
+- Monitoring & Maintenance
+- Troubleshooting
+- Rollback Procedures
 
 ---
 
 ## Pre-Deployment Checklist
 
-### Security Configuration
+### Security
 
-- [ ] Generate secure `SECRET_KEY` using `python generate_keys.py`
-- [ ] Generate secure `API_KEY` using `python generate_keys.py`
-- [ ] Set `DEBUG=False` in production `.env`
-- [ ] Enable API key authentication (`ENABLE_API_KEY_AUTH=true`)
-- [ ] Update `CORS_ORIGINS` to production domain(s) with HTTPS
-- [ ] Review and adjust rate limits for expected traffic
-- [ ] Configure HTTPS/TLS certificates
-- [ ] Set up firewall rules
+- [ ] Generate `SECRET_KEY` & `API_KEY` (`python generate_keys.py`)
+- [ ] Set `DEBUG=False` in `.env`
+- [ ] Enable API key auth (`ENABLE_API_KEY_AUTH=true`)
+- [ ] Update `CORS_ORIGINS` to production domain(s)
+- [ ] Review rate limits
+- [ ] Configure HTTPS/TLS
+- [ ] Set up firewall
 
-### Database Configuration
+### Database
 
-- [ ] Switch from SQLite to PostgreSQL
-- [ ] Set up database backups
-- [ ] Configure connection pooling
-- [ ] Test database connectivity
-- [ ] Run database migrations
+- [ ] Use PostgreSQL (not SQLite)
+- [ ] Set up backups
+- [ ] Configure pooling
+- [ ] Test connectivity
+- [ ] Run migrations
 
-### Application Configuration
+### Application
 
-- [ ] Review and set appropriate disk space limits
-- [ ] Configure download concurrency limits
+- [ ] Set disk space limits
+- [ ] Configure concurrency
 - [ ] Set up log rotation
-- [ ] Configure error monitoring (Sentry, etc.)
+- [ ] Error monitoring (Sentry, etc.)
 - [ ] Test all API endpoints
-- [ ] Verify external dependencies (yt-dlp, ffmpeg)
+- [ ] Verify yt-dlp & ffmpeg
 
 ### Infrastructure
 
 - [ ] Set up reverse proxy (nginx/Caddy)
-- [ ] Configure SSL/TLS certificates (Let's Encrypt)
+- [ ] Configure SSL/TLS (Let's Encrypt)
+
+---
+
+## Build Guide (Windows Executable)
+
+### Prerequisites
+
+1. **Python 3.10+** installed
+2. **PyInstaller** installed:
+   ```bash
+   pip install pyinstaller
+   ```
+3. **yt-dlp.exe** and **ffmpeg.exe** available (they'll need to be bundled or accessible)
+
+### Quick Build Process
+
+#### 1. Clean Previous Builds
+
+```powershell
+Remove-Item -Recurse -Force build\ -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force dist\ -ErrorAction SilentlyContinue
+Remove-Item -Force "YouTube Downloader.exe" -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force __pycache__\ -ErrorAction SilentlyContinue
+```
+
+#### 2. Build the Executable
+
+**Option A: Using the spec file (Recommended)**
+
+```powershell
+pyinstaller "YouTube Downloader.spec"
+```
+
+**Option B: Direct command (creates new spec file)**
+
+```powershell
+pyinstaller --name "YT2MP3-Converter" --onefile --console YTMP3urlConverter.py
+```
+
+#### 3. Locate the Executable
+
+The executable will be in:
+
+```
+dist\YouTube Downloader.exe
+```
+
+#### 4. Test the Executable
+
+```powershell
+.\dist\YT2MP3-Converter.exe --help
+.\dist\YT2MP3-Converter.exe https://youtube.com/watch?v=VIDEO_ID --cookies-browser firefox
+```
+
+---
+
+## Automated Build Script
+
+Create `build-exe.ps1`:
+
+```powershell
+# build-exe.ps1
+Write-Host "Cleaning previous builds..." -ForegroundColor Yellow
+if (Test-Path "build") { Remove-Item -Recurse -Force "build" }
+if (Test-Path "dist\YT2MP3-Converter.exe") { Remove-Item -Force "dist\YT2MP3-Converter.exe" }
+if (Test-Path "__pycache__") { Remove-Item -Recurse -Force "__pycache__" }
+Get-ChildItem -Recurse -Filter "*.pyc" | Remove-Item -Force
+Write-Host "Building executable..." -ForegroundColor Green
+pyinstaller --name "YT2MP3-Converter" `
+    --onefile `
+    --console `
+    --clean `
+    --add-data "config.example.json;." `
+    YTMP3urlConverter.py
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "`nBuild successful!" -ForegroundColor Green
+    Write-Host "Executable location: dist\YT2MP3-Converter.exe" -ForegroundColor Cyan
+    Write-Host "`nTesting executable..." -ForegroundColor Yellow
+    .\dist\YT2MP3-Converter.exe --help
+} else {
+    Write-Host "`nBuild failed! Check errors above." -ForegroundColor Red
+    exit 1
+}
+```
+
+Run it:
+
+```powershell
+.\build-exe.ps1
+```
+
+---
+
+## Browser Setup for Cookie Authentication
+
+This section explains how to configure browser cookies for downloading from platforms that require authentication (Twitter/X, Instagram, etc.).
+
+### Supported Browsers
+
+- Chrome (`chrome`)
+- Brave (`brave`)  
+  **Note:** Brave locks its cookie database while running. **Close Brave before downloading.**
+- Firefox (`firefox`)
+- Edge (`edge`)
+- Opera (`opera`)
+- Chromium (`chromium`)
+- Safari (`safari`)
+
+#### Brave Browser
+
+- Use `--cookies-browser brave` for standalone script
+- Set `COOKIE_BROWSER=brave` in backend/.env for web app
+- If you see "Could not copy Chrome cookie database" error, close Brave completely (check Task Manager)
+
+#### Firefox with Tor
+
+- Use `--cookies-browser firefox` or `COOKIE_BROWSER=firefox`
+- Tor proxy routing does not affect cookie storage
+- If using Tor Browser, privacy settings may limit cookie access
+
+#### Quick Setup
+
+```bash
+# Standalone script
+python YTMP3urlConverter.py <URL> --cookies-browser brave
+# Backend
+COOKIE_BROWSER=brave
+```
+
+#### Using Configuration File
+
+Create `config.json`:
+
+```json
+{
+  "url": "https://x.com/user/status/123456",
+  "cookies_browser": "brave",
+  "output_dir": "Downloads/Video"
+}
+```
+
+Run:
+
+```bash
+python YTMP3urlConverter.py --config config.json
+```
+
+#### Testing
+
+```bash
+python YTMP3urlConverter.py https://x.com/user/status/123456 --cookies-browser brave --verbose
+# If it works, you'll see the download start
+# If it fails with authentication errors, check that you're logged into Twitter/X in Brave
+```
+
+#### Security Notes
+
+- Cookies are read from your browser's cookie database
+- No cookies are modified or sent anywhere except to the target platform
+- The downloader only reads cookies, never writes them
+- Your browser's security settings still apply
+
+---
+
+## Troubleshooting
+
+### Build Issues
+
+- "Module not found" errors: Add missing modules to `hiddenimports` in spec file or use `--hidden-import` flag
+- Executable is too large: Use `upx=True` in spec file, `--exclude-module`, or `--onedir`
+- Executable won't run: Check dependencies, run with `--debug=all`, test in a clean environment
+- "yt-dlp.exe not found": Bundle with executable, place in same directory, add to PATH, or use `--yt-dlp-path`/`--ffmpeg-path`
+
+### Cookie Issues
+
+- "Could not copy Chrome cookie database": Close Brave/Chrome completely
+- "No cookies found": Ensure browser is logged in, cookies not cleared, and browser is open (Firefox) or closed (Brave)
+- Tor Browser: Use `firefox` as browser option, or try Brave/regular Firefox
+
+---
+
+## Distribution
+
+Include the following when distributing:
+
+1. YT2MP3-Converter.exe
+2. yt-dlp.exe
+3. ffmpeg.exe
+4. config.example.json
+5. README.md
+
+Directory structure:
+
+```
+YT2MP3-Converter/
+├── YT2MP3-Converter.exe
+├── yt-dlp.exe
+├── ffmpeg.exe
+├── config.example.json
+└── README.md
+```
+
+---
+
+## Build Checklist
+
+- [ ] Clean previous builds
+- [ ] Update spec file (if needed)
+- [ ] Install PyInstaller: `pip install pyinstaller`
+- [ ] Build executable: `pyinstaller spec_file.spec`
+- [ ] Test executable: `.\dist\executable.exe --help`
+- [ ] Test with actual download
+- [ ] Verify all dependencies are accessible
+- [ ] Create distribution package
+- [ ] Test on clean system (if possible)
+
+---
+
+**Need help?** Check the main README.md or open an issue on GitHub.
+
+- [ ] Set up reverse proxy (nginx/Caddy)
+- [ ] Configure SSL/TLS (Let's Encrypt)
 - [ ] Set up monitoring (uptime, performance)
 - [ ] Configure automated backups
 - [ ] Test disaster recovery procedures
@@ -68,16 +305,19 @@ This guide covers deploying the YouTube Downloader application to production env
 ## Deployment Options
 
 ### Option 1: Traditional Server (VPS/Dedicated)
+
 **Best for**: Full control, predictable costs, custom requirements
 
 **Platforms**: DigitalOcean, Linode, Vultr, AWS EC2, Google Compute Engine
 
 ### Option 2: Platform-as-a-Service (PaaS)
+
 **Best for**: Simplified deployment, automatic scaling
 
 **Platforms**: Heroku, Railway, Render, Fly.io
 
 ### Option 3: Containerized Deployment
+
 **Best for**: Portability, microservices, scaling
 
 **Platforms**: Docker, Kubernetes, AWS ECS, Google Cloud Run
@@ -162,7 +402,8 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# Download yt-dlp
+
+# Download yt-dlp (official)
 cd /opt/youtube-downloader
 curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp
 chmod +x yt-dlp
@@ -421,7 +662,7 @@ RUN apt-get update && apt-get install -y \
 
 # Download yt-dlp
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
-    && chmod +x /usr/local/bin/yt-dlp
+  && chmod +x /usr/local/bin/yt-dlp
 
 # Install Python dependencies
 COPY backend/requirements.txt .
@@ -438,7 +679,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 Create `docker-compose.yml`:
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   db:
@@ -588,12 +829,14 @@ tail -f /opt/youtube-downloader/backend/app.log
 #### Uptime Monitoring
 
 Use services like:
+
 - **UptimeRobot** (free)
 - **Pingdom**
 - **StatusCake**
 - **Better Uptime**
 
 Configure monitoring for:
+
 - HTTPS endpoint (https://yourdomain.com)
 - API health check (https://yourdomain.com/api/health)
 

@@ -1,78 +1,246 @@
-# Security Assessment & Implementation Status
+# Security Overview & Implementation
 
-**Version**: 1.0.0
-**Last Updated**: 2025-11-26
-**Status**: ✅ All critical vulnerabilities have been addressed
+**Version:** 1.0.0  
+**Last Updated:** 2025-11-26  
+**Status:** ✅ All critical vulnerabilities addressed
 
 ---
 
 ## Threat Model
 
-Understanding what we're protecting against helps prioritize security efforts and set realistic expectations.
+### ✅ Protected
 
-### ✅ What We're Protecting Against
-
-#### 1. **Malicious Input Attacks**
-- **Command Injection**: Attackers embedding shell commands in URLs
+- **Command Injection:**
   - Example: `https://youtube.com/watch?v=abc; rm -rf /`
-  - Protection: URL sanitization blocks shell metacharacters
-- **Path Traversal**: Users attempting to access unauthorized files
-  - Example: `../../etc/passwd` in download location
-  - Protection: Path validation ensures files stay in allowed directories
-
-#### 2. **Abuse & Resource Exhaustion**
-- **API Abuse**: Excessive requests overwhelming the server
+  - Protection: URL sanitization
+- **Path Traversal:**
+  - Example: `../../etc/passwd`
+  - Protection: Path validation
+- **API Abuse:**
   - Protection: Rate limiting (60 req/min, 1000 req/hour)
-- **Memory Exhaustion**: Massive request payloads consuming memory
-  - Protection: Request size limits (10 MB default)
-- **Queue Flooding**: Submitting thousands of downloads
-  - Protection: Queue size limits, rate limiting on batch endpoints
-
-#### 3. **Unauthorized Access**
-- **API Access Without Permission**: Unauthenticated users accessing endpoints
-  - Protection: Optional API key authentication system
-- **Unauthorized Data Access**: Users viewing other users' downloads
-  - Note: Current single-user design; future multi-user support will need session management
-
-#### 4. **Web Application Attacks**
-- **XSS (Cross-Site Scripting)**: Injecting malicious scripts
-  - Protection: Security headers, React's built-in XSS protection
-- **Clickjacking**: Embedding app in malicious iframe
-  - Protection: X-Frame-Options header
-- **MIME Sniffing**: Browser executing files as wrong type
-  - Protection: X-Content-Type-Options header
-
-#### 5. **Data Integrity**
-- **SQL Injection**: Malicious SQL in database queries
-  - Protection: SQLAlchemy ORM with parameterized queries
-- **Configuration Tampering**: Weak or default secret keys
-  - Protection: Validation prevents production use with default keys
+- **Memory Exhaustion:**
+  - Protection: Request size limits (10 MB)
+- **Queue Flooding:**
+  - Protection: Queue size & rate limits
+- **Unauthorized Access:**
+  - Protection: Optional API key auth
+- **Unauthorized Data Access:**
+  - Note: Single-user design (future: session mgmt)
+- **XSS, Clickjacking, MIME Sniffing:**
+  - Protection: Security headers, React XSS protection
+- **SQL Injection:**
+  - Protection: SQLAlchemy ORM
+- **Config Tampering:**
+  - Protection: Secret key validation
 
 ---
 
-### ❌ What We're NOT Protecting Against
+### ❌ Not Covered
 
-#### Out of Scope Threats
-These threats require different security measures or are beyond the application's control:
+- **Physical Server Access:**
+  - Mitigation: Physical security, encryption at rest (future)
 
-1. **Physical Server Access**
-   - If an attacker has physical access to the server, application-level security is insufficient
-   - Mitigation: Physical security, encryption at rest (future)
+---
+
+## Security Features Implemented
+
+### 1. Rate Limiting
+
+- Prevents abuse by limiting requests per client
+- Uses `slowapi` library, global and per-endpoint
+- Default: 60 requests/minute, 1000 requests/hour
+
+### 2. Path Traversal Protection
+
+- Validates all download locations
+- Ensures paths stay within allowed directory
+- Blocks suspicious patterns (.., ~, $)
+
+### 3. Command Injection Prevention
+
+- Checks for dangerous characters in URLs
+- Blocks: `;`, `|`, `&`, `$`, `` ` ``, `\`, newlines, etc.
+
+### 4. Request Size Limits
+
+- Middleware validates Content-Length
+- Default: 1 MB limit (configurable)
+
+### 5. Security Headers
+
+- Adds headers: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Strict-Transport-Security, Content-Security-Policy, Referrer-Policy, Permissions-Policy
+
+### 6. Enhanced Logging
+
+- Request/response logging
+- Security event logging (file: `app.log`)
+
+### 7. API Key Authentication (Optional)
+
+- Header-based: `X-API-Key: your-key`
+- Constant-time comparison
+- Disabled by default for development
+
+### 8. Secure SECRET_KEY
+
+- Protects session tokens and cryptographic operations
+- App refuses to start in production with default dev key
+
+---
+
+## Security Fixes Applied
+
+- Subprocess timeout protection (30 min)
+- Log rotation (10 MB per file, 5 backups)
+- Rate limiting on info endpoints
+- Quality/format whitelisting
+- Enhanced URL sanitization (decoding, Unicode normalization)
+- Disk space checks (10 GB min)
+- Download quotas (5 GB/file, 100 GB/user)
+- File type validation (MIME, size, empty file detection)
+- CORS validation in production (HTTPS enforced)
+- Streaming request size enforcement
+
+---
+
+## Production Deployment Checklist
+
+### Critical (Do Before Launch)
+
+- [ ] Set `DEBUG=False` in `.env`
+- [ ] Generate and set secure `SECRET_KEY`
+- [ ] Enable API key authentication (`ENABLE_API_KEY_AUTH=true`)
+- [ ] Generate and set secure `API_KEY`
+- [ ] Configure HTTPS (reverse proxy)
+- [ ] Update `CORS_ORIGINS` to your frontend domain
+- [ ] Switch to PostgreSQL for `DATABASE_URL`
+
+### Recommended
+
+- [ ] Review and adjust rate limits
+- [ ] Set up log aggregation
+- [ ] Configure security monitoring/alerting
+- [ ] Set up automated backups
+- [ ] Implement IP whitelisting if needed
+- [ ] Add healthcheck monitoring
+- [ ] Configure firewall rules
+
+### Ongoing
+
+- [ ] Regularly update dependencies
+- [ ] Monitor logs for suspicious activity
+- [ ] Review and rotate API keys
+- [ ] Keep OS and system packages updated
+- [ ] Conduct security audits
+
+---
+
+## Example Production Configuration
+
+### .env (Production)
+
+```env
+DEBUG=False
+SECRET_KEY="<your-secure-key>"
+ENABLE_API_KEY_AUTH=true
+API_KEY="<your-generated-key>"
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_PER_MINUTE=30
+RATE_LIMIT_PER_HOUR=500
+MAX_REQUEST_SIZE=524288
+DATABASE_URL="postgresql://ytdl_user:secure_password@localhost:5432/ytdl_db"
+CORS_ORIGINS='["https://yourdomain.com"]'
+LOG_LEVEL="WARNING"
+```
+
+---
+
+## Testing Security Features
+
+### Rate Limiting
+
+```bash
+for i in {1..100}; do curl http://localhost:8000/api/downloads/ & done
+# Should see 429 Too Many Requests after hitting limit
+```
+
+### Path Traversal Protection
+
+```bash
+curl -X PATCH http://localhost:8000/api/settings/ \
+  -H "Content-Type: application/json" \
+  -d '{"download_location": "../../etc/passwd"}'
+# Should return 400 Bad Request
+```
+
+### Command Injection Prevention
+
+```bash
+curl -X POST http://localhost:8000/api/downloads/ \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://youtube.com/watch?v=abc; rm -rf /"}'
+# Should return 400 Bad Request
+```
+
+### Request Size Limit
+
+```bash
+dd if=/dev/zero of=large.json bs=1M count=2
+curl -X POST http://localhost:8000/api/downloads/ \
+  -H "Content-Type: application/json" \
+  -d @large.json
+# Should return 413 Request Entity Too Large
+```
+
+### API Key Authentication
+
+```bash
+curl -H "X-API-Key: your-key" http://localhost:8000/api/downloads/
+# Should return 200 OK
+curl http://localhost:8000/api/downloads/
+# Should return 401 Unauthorized
+```
+
+---
+
+## Monitoring Security Events
+
+Security events are logged to `app.log` with the prefix `SECURITY EVENT:`.
+
+---
+
+## Additional Recommendations
+
+1. Use HTTPS only in production
+2. Implement JWT tokens for user-specific auth (future)
+3. Add database encryption (at rest)
+4. Use a secrets manager for sensitive keys
+5. Enable 2FA for admin interfaces
+6. Implement CSRF protection if browser-based auth is used
+7. Regularly run security scanning tools (`bandit`, `safety`, `snyk`)
+
+---
+
+**For more details, see code in `backend/app/core/security.py` and logs in `app.log`.**
 
 2. **Compromised Dependencies**
+
    - Vulnerabilities in Python packages or npm modules
    - Mitigation: Regular updates, use Dependabot, `npm audit`, `safety check`
 
 3. **Social Engineering**
+
    - Users being tricked into running malicious code or sharing credentials
    - Mitigation: User education, principle of least privilege
 
 4. **Network-Level Attacks**
+
    - DDoS attacks at infrastructure level
    - Man-in-the-middle attacks on unencrypted connections
    - Mitigation: Use reverse proxy with DDoS protection, enforce HTTPS
 
 5. **Copyright & Legal Issues**
+
    - Users downloading copyrighted content illegally
    - Scope: User responsibility; application logs download sources for accountability
 
@@ -85,21 +253,25 @@ These threats require different security measures or are beyond the application'
 ### 🎯 Threat Priorities
 
 **Critical** (Immediate Protection Required):
+
 - ✅ Command Injection → **PROTECTED**
 - ✅ Path Traversal → **PROTECTED**
 - ✅ API Abuse (Rate Limiting) → **PROTECTED**
 
 **High** (Important for Production):
+
 - ✅ Unauthorized Access → **PROTECTED** (optional API key)
 - ✅ SQL Injection → **PROTECTED** (ORM)
 - ✅ XSS/Clickjacking → **PROTECTED** (headers)
 
 **Medium** (Defense in Depth):
+
 - ✅ Request Size Limits → **PROTECTED**
 - ✅ Security Logging → **IMPLEMENTED**
 - ⏭️ HTTPS → **External** (reverse proxy)
 
 **Low** (Current Architecture):
+
 - ⏭️ CSRF → Not needed (header-based auth, not cookie-based)
 - ⏭️ Multi-user Session Management → Future feature
 
@@ -532,6 +704,7 @@ Regular security testing helps identify vulnerabilities before they can be explo
 Bandit analyzes Python code for common security issues.
 
 **Installation & Usage**:
+
 ```bash
 # Install
 pip install bandit
@@ -550,6 +723,7 @@ bandit -r backend/app/ -x backend/app/tests/
 ```
 
 **What Bandit Checks**:
+
 - Hardcoded passwords and secrets
 - SQL injection vulnerabilities
 - Shell injection risks
@@ -562,6 +736,7 @@ bandit -r backend/app/ -x backend/app/tests/
 Safety checks Python dependencies for known security vulnerabilities.
 
 **Installation & Usage**:
+
 ```bash
 # Install
 pip install safety
@@ -577,6 +752,7 @@ safety check --continue-on-error --file backend/requirements.txt
 ```
 
 **What Safety Checks**:
+
 - Known CVEs in dependencies
 - Outdated packages with security fixes
 - Malicious packages
@@ -586,6 +762,7 @@ safety check --continue-on-error --file backend/requirements.txt
 pip-audit is an official tool from PyPA for auditing Python packages.
 
 **Installation & Usage**:
+
 ```bash
 # Install
 pip install pip-audit
@@ -607,6 +784,7 @@ pip-audit --fix
 #### 1. **npm audit** - Built-in Vulnerability Scanner
 
 **Usage**:
+
 ```bash
 # Navigate to frontend
 cd frontend
@@ -627,6 +805,7 @@ npm audit fix --force
 #### 2. **Snyk** - Advanced Dependency Scanner
 
 **Installation & Usage**:
+
 ```bash
 # Install globally
 npm install -g snyk
@@ -649,11 +828,13 @@ snyk monitor
 #### 1. **OWASP ZAP** - Web Application Security Scanner
 
 **Setup**:
+
 1. Download [OWASP ZAP](https://www.zaproxy.org/download/)
 2. Start the application
 3. Configure proxy to `localhost:8000`
 
 **Usage**:
+
 ```bash
 # Start your backend
 cd backend
@@ -664,6 +845,7 @@ zap-cli quick-scan --self-contained http://localhost:8000/api/docs
 ```
 
 **What ZAP Tests**:
+
 - SQL injection
 - XSS vulnerabilities
 - CSRF issues
@@ -715,12 +897,12 @@ name: Security Audit
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   schedule:
     # Run weekly on Monday at 9am
-    - cron: '0 9 * * 1'
+    - cron: "0 9 * * 1"
 
 jobs:
   python-security:
@@ -731,7 +913,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
       - name: Install dependencies
         run: |
@@ -753,7 +935,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: "18"
 
       - name: Install dependencies
         run: |
@@ -773,6 +955,7 @@ jobs:
 Before each release, verify all security features:
 
 #### Input Validation
+
 - [ ] Path traversal attempts blocked
 - [ ] Command injection attempts blocked
 - [ ] URL validation working
@@ -780,18 +963,21 @@ Before each release, verify all security features:
 - [ ] Batch size limits enforced
 
 #### Authentication & Authorization
+
 - [ ] API key authentication functional (if enabled)
 - [ ] Invalid API keys rejected
 - [ ] Missing API keys rejected
 - [ ] Constant-time comparison preventing timing attacks
 
 #### Rate Limiting
+
 - [ ] Per-minute limits enforced
 - [ ] Per-hour limits enforced
 - [ ] Rate limit headers present
 - [ ] 429 status returned when exceeded
 
 #### Security Headers
+
 - [ ] X-Content-Type-Options present
 - [ ] X-Frame-Options present
 - [ ] X-XSS-Protection present
@@ -800,6 +986,7 @@ Before each release, verify all security features:
 - [ ] Referrer-Policy present
 
 #### Logging & Monitoring
+
 - [ ] Security events logged
 - [ ] Failed auth attempts logged
 - [ ] Path traversal attempts logged
@@ -807,6 +994,7 @@ Before each release, verify all security features:
 - [ ] Log rotation configured
 
 #### Configuration
+
 - [ ] Secret key not using default value
 - [ ] Debug mode disabled in production
 - [ ] CORS configured for production domain
@@ -820,16 +1008,19 @@ Before each release, verify all security features:
 #### Recommended Tools
 
 1. **Dependabot** (GitHub)
+
    - Automatically checks for vulnerable dependencies
    - Creates pull requests with updates
    - Free for public and private repositories
 
 2. **Snyk** (Free tier available)
+
    - Continuous monitoring for vulnerabilities
    - Integrates with GitHub/GitLab
    - Automated fix pull requests
 
 3. **GitHub Security Advisories**
+
    - Alerts for vulnerable dependencies
    - Built into GitHub
    - No setup required
@@ -867,37 +1058,41 @@ updates:
 
 Monitor these security metrics regularly:
 
-| Metric | Target | How to Track |
-|--------|--------|--------------|
-| Failed auth attempts | < 100/day | Review `app.log` |
-| Rate limit violations | < 50/day | Review `app.log` |
-| Path traversal attempts | 0/day | Review `app.log` |
-| Command injection attempts | 0/day | Review `app.log` |
+| Metric                     | Target          | How to Track                |
+| -------------------------- | --------------- | --------------------------- |
+| Failed auth attempts       | < 100/day       | Review `app.log`            |
+| Rate limit violations      | < 50/day        | Review `app.log`            |
+| Path traversal attempts    | 0/day           | Review `app.log`            |
+| Command injection attempts | 0/day           | Review `app.log`            |
 | Dependency vulnerabilities | 0 high/critical | `safety check`, `npm audit` |
-| Code security issues | 0 high/critical | `bandit` scans |
-| Average request size | < 1 MB | Application metrics |
-| Download queue size | < 80% capacity | Application metrics |
+| Code security issues       | 0 high/critical | `bandit` scans              |
+| Average request size       | < 1 MB          | Application metrics         |
+| Download queue size        | < 80% capacity  | Application metrics         |
 
 ---
 
 ### Security Testing Best Practices
 
 1. **Test Regularly**
+
    - Run security scans before every deployment
    - Schedule weekly automated scans
    - Perform manual testing for major features
 
 2. **Test Early**
+
    - Include security tests in development workflow
    - Run bandit/safety in pre-commit hooks
    - Catch issues before they reach production
 
 3. **Test Realistically**
+
    - Use production-like environment for testing
    - Test with realistic data volumes
    - Simulate actual attack scenarios
 
 4. **Document Results**
+
    - Keep records of security test results
    - Track vulnerabilities over time
    - Document false positives to avoid re-testing

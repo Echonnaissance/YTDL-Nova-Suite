@@ -46,9 +46,23 @@ class YTDLPService:
 
     def is_valid_url(self, url: str) -> bool:
         """
-        Check if URL is a valid YouTube URL
+        Check if URL is supported by yt-dlp
+        Supports YouTube, Twitter/X, Instagram, TikTok, and other platforms
         """
-        valid_domains = ["youtube.com", "youtu.be", "youtube-nocookie.com"]
+        valid_domains = [
+            # YouTube
+            "youtube.com", "youtu.be", "youtube-nocookie.com",
+            # Twitter/X
+            "x.com", "twitter.com",
+            # Instagram
+            "instagram.com",
+            # TikTok
+            "tiktok.com",
+            # Other common platforms
+            "vimeo.com", "dailymotion.com", "twitch.tv",
+            "facebook.com", "fb.watch", "reddit.com",
+            "bilibili.com", "nicovideo.jp"
+        ]
         return any(domain in url.lower() for domain in valid_domains)
 
     def _get_video_info_sync(self, url: str) -> Dict[str, Any]:
@@ -57,8 +71,13 @@ class YTDLPService:
             self.ytdlp_path,
             "--dump-json",
             "--no-playlist",
-            url
         ]
+
+        # Add cookie browser support if configured (needed for Twitter/X, Instagram, etc.)
+        if settings.COOKIE_BROWSER:
+            cmd.extend(["--cookies-from-browser", settings.COOKIE_BROWSER])
+
+        cmd.append(url)
 
         result = subprocess.run(
             cmd,
@@ -87,7 +106,8 @@ class YTDLPService:
         self._check_ytdlp_available()
 
         if not self.is_valid_url(url):
-            raise InvalidURLError(f"Invalid YouTube URL: {url}")
+            raise InvalidURLError(
+                f"Unsupported URL: {url}. Please provide a valid URL from a supported platform.")
 
         try:
             # Use to_thread to avoid blocking (Windows-compatible)
@@ -105,8 +125,13 @@ class YTDLPService:
             self.ytdlp_path,
             "--flat-playlist",
             "--dump-json",
-            url
         ]
+
+        # Add cookie browser support if configured (needed for Twitter/X, Instagram, etc.)
+        if settings.COOKIE_BROWSER:
+            cmd.extend(["--cookies-from-browser", settings.COOKIE_BROWSER])
+
+        cmd.append(url)
 
         result = subprocess.run(
             cmd,
@@ -138,7 +163,8 @@ class YTDLPService:
     async def get_playlist_info(self, url: str) -> Dict[str, Any]:
         """Extract playlist information"""
         if not self.is_valid_url(url):
-            raise InvalidURLError(f"Invalid YouTube URL: {url}")
+            raise InvalidURLError(
+                f"Unsupported URL: {url}. Please provide a valid URL from a supported platform.")
 
         try:
             return await asyncio.to_thread(self._get_playlist_info_sync, url)
@@ -179,8 +205,13 @@ class YTDLPService:
             "-f", "bestvideo+bestaudio/best",
             "--merge-output-format", format,
             "--no-playlist",
-            url
         ]
+
+        # Add cookie browser support if configured (needed for Twitter/X, Instagram, etc.)
+        if settings.COOKIE_BROWSER:
+            cmd.extend(["--cookies-from-browser", settings.COOKIE_BROWSER])
+
+        cmd.append(url)
 
         return await self._execute_download(cmd, progress_callback)
 
@@ -216,6 +247,10 @@ class YTDLPService:
             "--audio-format", format,
             "--no-playlist",
         ]
+
+        # Add cookie browser support if configured (needed for Twitter/X, Instagram, etc.)
+        if settings.COOKIE_BROWSER:
+            cmd.extend(["--cookies-from-browser", settings.COOKIE_BROWSER])
 
         if embed_thumbnail:
             cmd.append("--embed-thumbnail")
@@ -260,7 +295,8 @@ class YTDLPService:
             # SECURITY: Check for timeout
             if time.time() - start_time > timeout_seconds:
                 process.kill()
-                raise YTDLPError(f"Download timed out after {timeout_seconds} seconds")
+                raise YTDLPError(
+                    f"Download timed out after {timeout_seconds} seconds")
 
         return_code = process.poll()
         if return_code != 0:
@@ -280,7 +316,8 @@ class YTDLPService:
                 if match:
                     downloaded_file = match.group(1).strip()
             elif "has already been downloaded" in line:
-                match = re.search(r'\[download\]\s+(.+?)\s+has already been downloaded', line)
+                match = re.search(
+                    r'\[download\]\s+(.+?)\s+has already been downloaded', line)
                 if match:
                     downloaded_file = match.group(1).strip()
 
@@ -348,7 +385,8 @@ class YTDLPService:
         try:
             return await asyncio.to_thread(self._check_availability_sync)
         except Exception as e:
-            print(f"[!] Unexpected error checking yt-dlp availability: {str(e)}")
+            print(
+                f"[!] Unexpected error checking yt-dlp availability: {str(e)}")
             return False
 
     def _get_version_sync(self) -> str:

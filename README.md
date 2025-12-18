@@ -1,16 +1,16 @@
-# YouTube Downloader - Professional Web Application
+# YouTube Downloader
 
-**Version**: 1.0.0
-**Last Updated**: 2025-11-26
+**Version:** 1.0.0  
+**Last Updated:** 2025-11-26
 
-A modern, professional-grade YouTube video and audio downloader built with FastAPI and React.
+A modern, full-stack video/audio downloader built with FastAPI (backend) and React (frontend). Supports YouTube, Twitter/X, Instagram, TikTok, and more.
 
-## Quick Start (TL;DR)
+---
 
-Get up and running in under 5 minutes:
+## 🚀 Quick Start
 
 ```bash
-# 1. Backend Setup
+# Backend
 cd backend
 python -m venv venv
 venv\Scripts\activate          # Windows
@@ -18,44 +18,45 @@ venv\Scripts\activate          # Windows
 pip install -r requirements.txt
 python -m app.main
 
-# 2. Frontend Setup (new terminal)
+# Frontend (new terminal)
 cd frontend
 npm install
 npm run dev
 
-# 3. Visit http://localhost:5173
+# Open: http://localhost:5173
 ```
 
-**Prerequisites**: Place `ffmpeg.exe` and `yt-dlp.exe` in project root (same directory as `backend/` and `frontend/` folders).
+**Prerequisites:**
 
-- Download [yt-dlp](https://github.com/yt-dlp/yt-dlp/releases)
-- Download [FFmpeg](https://ffmpeg.org/download.html)
+- Place `ffmpeg.exe` and `yt-dlp.exe` in the project root (same directory as `backend/` and `frontend/`).
+  - [yt-dlp Download](https://github.com/yt-dlp/yt-dlp/releases)
+  - [FFmpeg Download](https://ffmpeg.org/download.html)
 
-**Project Structure**:
+**Project Structure:**
+
 ```
 YT2MP3url/
-├── ffmpeg.exe          ← Place FFmpeg HERE
-├── yt-dlp.exe          ← Place yt-dlp HERE
+├── ffmpeg.exe
+├── yt-dlp.exe
 ├── backend/
 └── frontend/
 ```
 
 ---
 
-## Features
+## ✨ Features
 
-### Core Functionality
-
-- Download YouTube videos and audio in various formats
-- Real-time download progress tracking with download queue
-- Playlist support with preview
-- Download history with search and filtering
+- Download video/audio from YouTube, Twitter/X, Instagram, TikTok, etc.
+- Real-time progress & download queue
+- Playlist support & preview
+- Download history with search/filter
 - User settings persistence
-- Clean, modern UI with responsive design
+- Modern, responsive UI
+- Standalone CLI script
 
 ### Backend (FastAPI)
 
-- RESTful API with comprehensive endpoints
+- RESTful API with full endpoints
 - Asynchronous download queue system
 - SQLAlchemy ORM with SQLite database
 - Pydantic schemas for data validation
@@ -393,6 +394,12 @@ DEFAULT_VIDEO_FORMAT=mp4
 DEFAULT_AUDIO_FORMAT=m4a
 DEFAULT_QUALITY=best
 
+# Cookie Browser (for Twitter/X, Instagram, etc.)
+# Options: chrome, firefox, edge, opera, chromium, brave, safari, or leave empty
+# Note: Brave is fully supported. Firefox with Tor proxy works normally (use 'firefox').
+# For Tor Browser specifically, use 'firefox' but cookies may be limited.
+COOKIE_BROWSER=brave
+
 # Security (IMPORTANT for production!)
 SECRET_KEY=your-secret-key-here  # Generate with: python generate_keys.py
 ALGORITHM=HS256
@@ -596,6 +603,69 @@ Before deploying to production:
 - [ ] Set up log monitoring
 
 **See [SECURITY_IMPLEMENTATION.md](backend/SECURITY_IMPLEMENTATION.md) for complete security documentation.**
+
+---
+
+## Standalone CLI Script
+
+The project includes a standalone command-line script (`YTMP3urlConverter.py`) for quick downloads without running the full web application.
+
+### Usage
+
+```bash
+# Basic usage
+python YTMP3urlConverter.py https://youtube.com/watch?v=VIDEO_ID
+
+# With options
+python YTMP3urlConverter.py https://x.com/user/status/123456 --cookies-browser chrome --output-dir Downloads/Video
+
+# Using configuration file
+python YTMP3urlConverter.py --config config.json
+```
+
+### Options
+
+- `url` - URL to download (required, unless using --config)
+- `--output-dir` - Output directory (default: Downloads/Video)
+- `--cookies-browser` - Browser for cookies (chrome, firefox, edge, brave, etc.) - Required for Twitter/X
+  - **Brave**: Fully supported (recommended if it's your main browser)
+  - **Firefox with Tor proxy**: Use `firefox` - proxy routing doesn't affect cookie access
+  - **Tor Browser**: Use `firefox`, but cookies may be limited due to privacy settings
+- `--format` - Output format: mp4, webm, mkv, flv (default: mp4)
+- `--quality` - Video quality: best, 1080p, 720p, 480p (default: best)
+- `--yt-dlp-path` - Custom path to yt-dlp executable (auto-detected if not specified)
+- `--ffmpeg-path` - Custom path to ffmpeg executable (auto-detected if not specified)
+- `--config` - Path to JSON configuration file
+- `--verbose, -v` - Enable verbose logging
+
+### Configuration File
+
+Create a `config.json` file (see `config.example.json`):
+
+```json
+{
+  "url": "https://youtube.com/watch?v=VIDEO_ID",
+  "output_dir": "Downloads/Video",
+  "cookies_browser": "chrome",
+  "format": "mp4",
+  "quality": "best"
+}
+```
+
+### Supported Platforms
+
+The standalone script supports all platforms that yt-dlp supports, including:
+
+- YouTube
+- Twitter/X (requires `--cookies-browser`)
+- Instagram
+- TikTok
+- Vimeo
+- Dailymotion
+- Twitch
+- Facebook
+- Reddit
+- And many more...
 
 ---
 

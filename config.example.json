@@ -1,0 +1,10 @@
+{
+  "url": "https://youtube.com/watch?v=VIDEO_ID",
+  "output_dir": "Downloads/Video",
+  "cookies_browser": "chrome",
+  "format": "mp4",
+  "quality": "best",
+  "yt_dlp_path": "",
+  "ffmpeg_path": ""
+}
+
