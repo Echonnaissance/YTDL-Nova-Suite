@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import useSettingsStore from "../store/slices/settingsStore";
 import settingsService from "../services/settingsService";
+import { useToast } from "../hooks/useToast";
+import { useTheme } from "../hooks/useTheme";
 import "./SettingsPage.css";
 
 export default function SettingsPage() {
   const settings = useSettingsStore();
+  const toast = useToast();
+  const { theme, toggleTheme } = useTheme();
   const [downloadLocation, setDownloadLocation] = useState("");
   const [saving, setSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState(null);
 
   useEffect(() => {
     // Load download location from backend
@@ -24,20 +27,13 @@ export default function SettingsPage() {
 
   const handleSaveDownloadLocation = async () => {
     setSaving(true);
-    setSaveMessage(null);
     try {
       await settingsService.updateSettings({
         download_location: downloadLocation,
       });
-      setSaveMessage({
-        type: "success",
-        text: "Download location saved successfully!",
-      });
+      toast.success("Download location saved successfully!");
     } catch (err) {
-      setSaveMessage({
-        type: "error",
-        text: "Failed to save download location",
-      });
+      toast.error("Failed to save download location");
     } finally {
       setSaving(false);
     }
@@ -61,11 +57,15 @@ export default function SettingsPage() {
             <label className="form-label">Theme</label>
             <select
               className="form-select"
-              value={settings.theme}
-              onChange={(e) => settings.setTheme(e.target.value)}
+              value={theme}
+              onChange={(e) => {
+                if (e.target.value !== theme) {
+                  toggleTheme();
+                }
+              }}
             >
               <option value="dark">Dark</option>
-              <option value="light">Light (Coming Soon)</option>
+              <option value="light">Light</option>
             </select>
             <p className="form-help">Choose your preferred color theme</p>
           </div>
@@ -98,7 +98,7 @@ export default function SettingsPage() {
               <input
                 type="text"
                 className="form-input"
-                placeholder={"C:\\Users\\YourName\\Media Downloads"}
+                placeholder="Enter custom download path"
                 value={downloadLocation}
                 onChange={(e) => setDownloadLocation(e.target.value)}
                 style={{ flex: 1 }}
@@ -112,20 +112,9 @@ export default function SettingsPage() {
               </button>
             </div>
             <p className="form-help">
-              Downloads will be organized in Audio and Video subfolders.{" "}
-              Default: <code>{"C:\\Users\\Username\\Media Downloads"}</code>
+              Downloads will be organized in Audio and Video subfolders inside
+              the Downloads folder of the app directory.
             </p>
-            {saveMessage && (
-              <div
-                className={`alert ${
-                  saveMessage.type === "success"
-                    ? "alert-success"
-                    : "alert-error"
-                }`}
-              >
-                {saveMessage.text}
-              </div>
-            )}
           </div>
         </div>
 

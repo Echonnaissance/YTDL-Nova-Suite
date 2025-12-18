@@ -4,6 +4,32 @@ All notable changes, improvements, and applied fixes for the YouTube Downloader 
 
 ---
 
+## [1.2.0] - 2025-12-18
+
+### New Features
+
+- **Theme Toggle** - Dark/Light mode switcher in the navigation bar
+  - Respects system preference on first visit
+  - Persists preference in localStorage
+  - Full light theme color palette
+- **Toast Notifications** - Beautiful slide-in notifications for all actions
+  - Success, error, warning, and info variants
+  - Auto-dismiss with close button
+  - Replaces inline messages throughout the app
+- **API Documentation Page** - New `/api-docs` route with:
+  - Complete endpoint reference
+  - Request/response examples
+  - Supported formats and quality options
+  - Links to Swagger UI and ReDoc
+
+### UI Improvements
+
+- **Symmetrical Home Page** - Two-column layout with Features and Supported Sites
+- **Quick Tips Section** - Keyboard shortcuts displayed on home page
+- **Footer Navigation** - Uses React Router links for smoother navigation
+
+---
+
 ## [1.1.0] - 2025-12-18
 
 ### UI/UX Overhaul

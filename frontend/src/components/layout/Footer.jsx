@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import "./Footer.css";
 
 export default function Footer() {
@@ -24,13 +25,13 @@ export default function Footer() {
             <h4>Quick Links</h4>
             <ul>
               <li>
-                <a href="/download">Download</a>
+                <Link to="/download">Download</Link>
               </li>
               <li>
-                <a href="/history">History</a>
+                <Link to="/history">History</Link>
               </li>
               <li>
-                <a href="/settings">Settings</a>
+                <Link to="/settings">Settings</Link>
               </li>
             </ul>
           </div>
@@ -38,13 +39,7 @@ export default function Footer() {
             <h4>Resources</h4>
             <ul>
               <li>
-                <a
-                  href="http://localhost:8000/docs"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  API Docs
-                </a>
+                <Link to="/api-docs">API Docs</Link>
               </li>
               <li>
                 <a
@@ -71,7 +66,7 @@ export default function Footer() {
 
       <div className="footer-bottom">
         <p>© {currentYear} Echonnaissance. For educational purposes.</p>
-        <p className="footer-version">v1.1.0</p>
+        <p className="footer-version">v1.1.2</p>
       </div>
     </footer>
   );

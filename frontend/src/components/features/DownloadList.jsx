@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react';
-import downloadService from '../../services/downloadService';
-import useDownloadStore from '../../store/slices/downloadStore';
-import './DownloadList.css';
+import { useEffect, useState } from "react";
+import downloadService from "../../services/downloadService";
+import useDownloadStore from "../../store/slices/downloadStore";
+import { useToast } from "../../hooks/useToast";
+import "./DownloadList.css";
 
 export default function DownloadList({ statusFilter = null }) {
-  const { downloads, setDownloads, updateDownload, removeDownload } = useDownloadStore();
+  const { downloads, setDownloads, updateDownload, removeDownload } =
+    useDownloadStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const toast = useToast();
 
   useEffect(() => {
     fetchDownloads();
@@ -25,7 +28,7 @@ export default function DownloadList({ statusFilter = null }) {
       setDownloads(data || []);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch downloads');
+      setError("Failed to fetch downloads");
       console.error(err);
     } finally {
       setLoading(false);
@@ -33,24 +36,26 @@ export default function DownloadList({ statusFilter = null }) {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this download?')) {
+    if (!confirm("Are you sure you want to delete this download?")) {
       return;
     }
 
     try {
       await downloadService.deleteDownload(id);
       removeDownload(id);
+      toast.success("Download deleted");
     } catch (err) {
-      alert('Failed to delete download');
+      toast.error("Failed to delete download");
     }
   };
 
   const handleCancel = async (id) => {
     try {
       await downloadService.cancelDownload(id);
-      updateDownload(id, { status: 'cancelled' });
+      updateDownload(id, { status: "cancelled" });
+      toast.info("Download cancelled");
     } catch (err) {
-      alert('Failed to cancel download');
+      toast.error("Failed to cancel download");
     }
   };
 
@@ -58,27 +63,35 @@ export default function DownloadList({ statusFilter = null }) {
     try {
       const download = await downloadService.retryDownload(id);
       updateDownload(id, download);
+      toast.info("Retrying download...");
     } catch (err) {
-      alert('Failed to retry download');
+      toast.error("Failed to retry download");
     }
   };
 
   const getStatusBadge = (status) => {
     const statusClasses = {
-      pending: 'badge-pending',
-      processing: 'badge-processing',
-      completed: 'badge-completed',
-      failed: 'badge-failed',
-      cancelled: 'badge-cancelled'
+      pending: "badge-pending",
+      processing: "badge-processing",
+      completed: "badge-completed",
+      failed: "badge-failed",
+      cancelled: "badge-cancelled",
     };
 
-    return <span className={`badge ${statusClasses[status] || 'badge-pending'}`}>{status}</span>;
+    return (
+      <span className={`badge ${statusClasses[status] || "badge-pending"}`}>
+        {status}
+      </span>
+    );
   };
 
   if (loading && downloads.length === 0) {
     return (
       <div className="download-list-loading">
-        <span className="spinner" style={{ width: '2rem', height: '2rem' }}></span>
+        <span
+          className="spinner"
+          style={{ width: "2rem", height: "2rem" }}
+        ></span>
         <p>Loading downloads...</p>
       </div>
     );
@@ -115,23 +128,26 @@ export default function DownloadList({ statusFilter = null }) {
               </div>
             )}
             <div className="download-details">
-              <h3 className="download-title">{download.title || 'Unknown'}</h3>
+              <h3 className="download-title">{download.title || "Unknown"}</h3>
               <div className="download-meta">
                 <span className="download-type">{download.download_type}</span>
                 <span className="download-format">{download.format}</span>
-                {download.quality && <span className="download-quality">{download.quality}</span>}
+                {download.quality && (
+                  <span className="download-quality">{download.quality}</span>
+                )}
               </div>
-              {download.status === 'processing' && download.progress !== null && (
-                <div className="download-progress">
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{ width: `${download.progress}%` }}
-                    ></div>
+              {download.status === "processing" &&
+                download.progress !== null && (
+                  <div className="download-progress">
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{ width: `${download.progress}%` }}
+                      ></div>
+                    </div>
+                    <span className="progress-text">{download.progress}%</span>
                   </div>
-                  <span className="progress-text">{download.progress}%</span>
-                </div>
-              )}
+                )}
               {download.error_message && (
                 <p className="download-error">{download.error_message}</p>
               )}
@@ -141,13 +157,14 @@ export default function DownloadList({ statusFilter = null }) {
           <div className="download-actions">
             {getStatusBadge(download.status)}
 
-            {download.status === 'completed' && download.file_path && (
+            {download.status === "completed" && download.file_path && (
               <span className="download-file-path" title={download.file_path}>
                 ✓ Downloaded
               </span>
             )}
 
-            {(download.status === 'pending' || download.status === 'processing') && (
+            {(download.status === "pending" ||
+              download.status === "processing") && (
               <button
                 className="btn btn-small btn-danger"
                 onClick={() => handleCancel(download.id)}
@@ -156,7 +173,7 @@ export default function DownloadList({ statusFilter = null }) {
               </button>
             )}
 
-            {download.status === 'failed' && (
+            {download.status === "failed" && (
               <button
                 className="btn btn-small btn-secondary"
                 onClick={() => handleRetry(download.id)}

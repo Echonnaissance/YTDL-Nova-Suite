@@ -1,12 +1,11 @@
 .navigation {
-  background: var(--bg-secondary);
+  background: var(--nav-bg, var(--bg-secondary));
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: var(--z-sticky, 200);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  background: rgba(22, 27, 34, 0.85);
 }
 
 .nav-container {
@@ -68,7 +67,7 @@
 
 .nav-link:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--nav-hover-bg, rgba(255, 255, 255, 0.06));
 }
 
 .nav-link.active {

@@ -2,12 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import downloadService from "../../services/downloadService";
 import useDownloadStore from "../../store/slices/downloadStore";
 import useSettingsStore from "../../store/slices/settingsStore";
+import { useToast } from "../../hooks/useToast";
 import PlaylistPreview from "./PlaylistPreview";
 import "./DownloadForm.css";
 
 export default function DownloadForm() {
   const { addDownload } = useDownloadStore();
   const settings = useSettingsStore();
+  const toast = useToast();
 
   const [url, setUrl] = useState("");
   const [batchUrls, setBatchUrls] = useState("");
@@ -70,7 +72,7 @@ export default function DownloadForm() {
             setActiveDownload(null);
             setLoading(false);
             setDownloadProgress(100);
-            setSuccess(`Download completed: ${updated.title || "Unknown"}`);
+            toast.success(`Download completed: ${updated.title || "Unknown"}`);
             setTimeout(() => {
               setDownloadProgress(0);
               setDownloadSpeed(null);
@@ -81,7 +83,7 @@ export default function DownloadForm() {
             setActiveDownload(null);
             setLoading(false);
             setDownloadProgress(0);
-            setError(
+            toast.error(
               `Download failed: ${updated.error_message || "Unknown error"}`
             );
           }
@@ -159,12 +161,12 @@ export default function DownloadForm() {
 
   const handleFetchInfo = async () => {
     if (!url) {
-      setError("Please enter a URL");
+      toast.warning("Please enter a URL");
       return;
     }
 
     if (!validateUrl(url)) {
-      setError(
+      toast.warning(
         "Please enter a valid URL (must start with http:// or https://)"
       );
       return;
@@ -178,7 +180,7 @@ export default function DownloadForm() {
       const info = await downloadService.getVideoInfo(url);
       setVideoInfo(info);
     } catch (err) {
-      setError(
+      toast.error(
         err.response?.data?.detail || "Failed to fetch video information"
       );
     } finally {
@@ -190,12 +192,12 @@ export default function DownloadForm() {
     const currentUrl = batchMode ? batchUrls.split("\n")[0]?.trim() : url;
 
     if (!currentUrl) {
-      setError("Please enter a playlist URL");
+      toast.warning("Please enter a playlist URL");
       return;
     }
 
     if (!currentUrl.includes("list=")) {
-      setError("This doesn't appear to be a playlist URL");
+      toast.warning("This doesn't appear to be a playlist URL");
       return;
     }
 
@@ -207,7 +209,7 @@ export default function DownloadForm() {
       setPlaylistInfo(info);
       setShowPlaylistPreview(true);
     } catch (err) {
-      setError(
+      toast.error(
         err.response?.data?.detail || "Failed to fetch playlist information"
       );
     } finally {
@@ -223,13 +225,13 @@ export default function DownloadForm() {
       const urls = batchUrls.split("\n").filter((u) => u.trim());
 
       if (urls.length === 0) {
-        setError("Please enter at least one URL");
+        toast.warning("Please enter at least one URL");
         return;
       }
 
       for (const u of urls) {
         if (!validateUrl(u.trim())) {
-          setError(
+          toast.error(
             `Invalid URL: ${u}. Please provide a valid URL from a supported platform.`
           );
           return;
@@ -252,10 +254,10 @@ export default function DownloadForm() {
         const downloads = await downloadService.createBatchDownloads(requests);
         downloads.forEach((download) => addDownload(download));
 
-        setSuccess(`${downloads.length} downloads started`);
+        toast.success(`${downloads.length} downloads started`);
         setBatchUrls("");
       } catch (err) {
-        setError(
+        toast.error(
           err.response?.data?.detail || "Failed to create batch downloads"
         );
       } finally {
@@ -264,12 +266,12 @@ export default function DownloadForm() {
     } else {
       // Handle single download
       if (!url) {
-        setError("Please enter a URL");
+        toast.warning("Please enter a URL");
         return;
       }
 
       if (!validateUrl(url)) {
-        setError("Please enter a valid URL from a supported platform");
+        toast.warning("Please enter a valid URL from a supported platform");
         return;
       }
 
@@ -305,11 +307,11 @@ export default function DownloadForm() {
 
         // Start tracking this download's progress
         setActiveDownload(download);
-        setSuccess(`Download started: ${download.title || "Unknown"}`);
+        toast.info(`Download started: ${download.title || "Unknown"}`);
         setUrl("");
         setVideoInfo(null);
       } catch (err) {
-        setError(err.response?.data?.detail || "Failed to create download");
+        toast.error(err.response?.data?.detail || "Failed to create download");
         setLoading(false);
       }
       // Don't set loading to false here - let the progress polling handle it
@@ -544,14 +546,6 @@ export default function DownloadForm() {
             </div>
           </div>
         )}
-
-        {/* Messages */}
-        {error && (
-          <div className="message error">
-            {typeof error === "string" ? error : error.detail || "Error"}
-          </div>
-        )}
-        {success && <div className="message success">{success}</div>}
 
         {/* Download Button */}
         <button

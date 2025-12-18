@@ -4,91 +4,90 @@ import "./HomePage.css";
 export default function HomePage() {
   return (
     <div className="home-page">
-      {/* Hero Section */}
+      {/* Hero Section - Full Width */}
       <section className="hero" aria-labelledby="hero-title">
-        <div className="hero-content">
-          <h1 id="hero-title">
-            Download Media from <span className="gradient-text">Anywhere</span>
-          </h1>
-          <p className="subtitle">
-            YouTube, Twitter/X, Instagram, TikTok, and 1000+ sites. Fast, free,
-            and easy to use.
-          </p>
-          <div className="hero-actions">
-            <Link to="/download" className="btn btn-primary btn-large">
-              <span aria-hidden="true">⬇️</span> Start Download
-            </Link>
-            <Link to="/history" className="btn btn-secondary btn-large">
-              <span aria-hidden="true">📋</span> View History
-            </Link>
-          </div>
-          <p className="hero-hint">
-            <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to download instantly
-          </p>
+        <h1 id="hero-title">
+          Download Media from <span className="gradient-text">Anywhere</span>
+        </h1>
+        <p className="subtitle">
+          YouTube, Twitter/X, Instagram, TikTok, and 1000+ sites.
+        </p>
+        <div className="hero-actions">
+          <Link to="/download" className="btn btn-primary btn-large">
+            ⬇️ Start Download
+          </Link>
+          <Link to="/history" className="btn btn-secondary btn-large">
+            📋 History
+          </Link>
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="features" aria-labelledby="features-title">
-        <h2 id="features-title" className="sr-only">
-          Features
-        </h2>
-        <article className="feature-card">
-          <div className="feature-icon" aria-hidden="true">
-            🎵
+      {/* Two Column Layout - Symmetrical */}
+      <div className="home-columns">
+        {/* Left Column - Features */}
+        <section className="features-section" aria-labelledby="features-title">
+          <h2 id="features-title" className="section-title">
+            Features
+          </h2>
+          <div className="features-grid">
+            <div className="feature-card">
+              <span className="feature-icon">🎵</span>
+              <h3>Audio</h3>
+              <p>MP3, M4A, Opus</p>
+            </div>
+            <div className="feature-card">
+              <span className="feature-icon">🎬</span>
+              <h3>Video</h3>
+              <p>MP4, WebM, MKV</p>
+            </div>
+            <div className="feature-card">
+              <span className="feature-icon">⚡</span>
+              <h3>Smart</h3>
+              <p>Auto-fetch URLs</p>
+            </div>
+            <div className="feature-card">
+              <span className="feature-icon">🖼️</span>
+              <h3>Cover Art</h3>
+              <p>Embed thumbnails</p>
+            </div>
           </div>
-          <h3>Audio Downloads</h3>
-          <p>
-            Extract audio in high quality MP3, M4A, or Opus formats with
-            optional cover art
-          </p>
-        </article>
-        <article className="feature-card">
-          <div className="feature-icon" aria-hidden="true">
-            🎬
-          </div>
-          <h3>Video Downloads</h3>
-          <p>
-            Download videos in MP4, WebM, MKV, MOV, AVI and more at up to 4K
-            quality
-          </p>
-        </article>
-        <article className="feature-card">
-          <div className="feature-icon" aria-hidden="true">
-            ⚡
-          </div>
-          <h3>Smart Features</h3>
-          <p>
-            Auto-fetch on paste, recent URLs, real-time progress, and keyboard
-            shortcuts
-          </p>
-        </article>
-        <article className="feature-card">
-          <div className="feature-icon" aria-hidden="true">
-            🌐
-          </div>
-          <h3>1000+ Sites</h3>
-          <p>
-            YouTube, Twitter/X, Instagram, TikTok, Vimeo, Reddit, and many more
-          </p>
-        </article>
-      </section>
+        </section>
 
-      {/* Supported Platforms */}
-      <section className="platforms" aria-labelledby="platforms-title">
-        <h2 id="platforms-title">Supported Platforms</h2>
-        <div className="platform-badges">
-          <span className="platform-badge">YouTube</span>
-          <span className="platform-badge">Twitter/X</span>
-          <span className="platform-badge">Instagram</span>
-          <span className="platform-badge">TikTok</span>
-          <span className="platform-badge">Vimeo</span>
-          <span className="platform-badge">Reddit</span>
-          <span className="platform-badge">Twitch</span>
-          <span className="platform-badge">SoundCloud</span>
-          <span className="platform-badge">+ 1000 more</span>
+        {/* Right Column - Platforms & Tips */}
+        <div className="info-column">
+          <section className="platforms" aria-labelledby="platforms-title">
+            <h2 id="platforms-title" className="section-title">
+              Supported Sites
+            </h2>
+            <div className="platform-badges">
+              <span className="platform-badge">YouTube</span>
+              <span className="platform-badge">Twitter/X</span>
+              <span className="platform-badge">Instagram</span>
+              <span className="platform-badge">TikTok</span>
+              <span className="platform-badge">Vimeo</span>
+              <span className="platform-badge">Reddit</span>
+              <span className="platform-badge">Twitch</span>
+              <span className="platform-badge">+1000 more</span>
+            </div>
+          </section>
+
+          <section className="tips" aria-labelledby="tips-title">
+            <h2 id="tips-title" className="section-title">
+              Quick Tips
+            </h2>
+            <ul className="tips-list">
+              <li>
+                <kbd>Ctrl</kbd>+<kbd>V</kbd> to auto-paste URL
+              </li>
+              <li>
+                <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to download
+              </li>
+              <li>Paste multiple URLs for batch</li>
+              <li>Up to 4K quality supported</li>
+            </ul>
+          </section>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
