@@ -3,8 +3,8 @@ YouTube/Twitter Video Downloader
 A command-line tool for downloading videos from YouTube, Twitter/X, and other platforms supported by yt-dlp.
 
 Usage:
-    python YTMP3urlConverter.py <URL> [options]
-    python YTMP3urlConverter.py --config config.json
+    python UMDConverter.py <URL> [options]
+    python UMDConverter.py --config config.json
 """
 import subprocess
 import os
@@ -348,10 +348,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python YTMP3urlConverter.py https://youtube.com/watch?v=VIDEO_ID
-  python YTMP3urlConverter.py https://x.com/user/status/123456 --cookies-browser chrome
-  python YTMP3urlConverter.py https://youtube.com/watch?v=VIDEO_ID --output-dir Downloads/Video --format mp4
-  python YTMP3urlConverter.py --config config.json
+  python UMDConverter.py https://youtube.com/watch?v=VIDEO_ID
+  python UMDConverter.py https://x.com/user/status/123456 --cookies-browser chrome
+  python UMDConverter.py https://youtube.com/watch?v=VIDEO_ID --output-dir Downloads/Video --format mp4
+  python UMDConverter.py --config config.json
         """
     )
 

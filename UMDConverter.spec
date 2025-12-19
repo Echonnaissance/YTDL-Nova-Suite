@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec file for YTMP3urlConverter CLI tool
+# PyInstaller spec file for UMD (Universal Media Downloader) CLI tool
 
 a = Analysis(
     ['YTMP3urlConverter.py'],
@@ -24,7 +24,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='YT2MP3-Converter',  # Executable name
+    name='UMD',  # Executable name
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

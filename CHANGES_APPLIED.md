@@ -8,7 +8,7 @@ All critical and high-priority improvements have been successfully applied to th
 
 ## ✅ Completed Improvements
 
-### 1. Standalone Script (`YTMP3urlConverter.py`) - Complete Rewrite
+### 1. Standalone Script (`UniversalMediaDownloader.py`) - Complete Rewrite
 
 **Changes:**
 
@@ -37,13 +37,13 @@ All critical and high-priority improvements have been successfully applied to th
 
 ```bash
 # Basic usage
-python YTMP3urlConverter.py https://youtube.com/watch?v=VIDEO_ID
+python UniversalMediaDownloader.py https://youtube.com/watch?v=VIDEO_ID
 
 # With options
-python YTMP3urlConverter.py https://x.com/user/status/123456 --cookies-browser chrome
+python UniversalMediaDownloader.py https://x.com/user/status/123456 --cookies-browser chrome
 
 # Using config file
-python YTMP3urlConverter.py --config config.json
+python UniversalMediaDownloader.py --config config.json
 ```
 
 ---
@@ -136,7 +136,7 @@ const urlPattern =
 
 ## 📋 Files Modified
 
-1. **YTMP3urlConverter.py** - Complete rewrite with all improvements
+1. **UniversalMediaDownloader.py** - Complete rewrite with all improvements
 2. **backend/app/config.py** - Added COOKIE_BROWSER setting
 3. **backend/app/services/ytdlp_service.py** - Extended URL validation and added cookie support
 4. **frontend/src/components/features/DownloadForm.jsx** - Extended URL validation

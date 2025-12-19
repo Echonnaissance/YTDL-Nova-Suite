@@ -1,30 +1,13 @@
-# Deployment Guide
-
 # Deployment, Build & Browser Setup Guide
 
-**Version:** 1.0.0  
-**Last Updated:** 2025-11-26
-
----
-
-## Table of Contents
-
-- Pre-Deployment Checklist
-- Build Guide (Windows Executable)
-- Deployment Options
-- Server Requirements
-- Production Setup
-- Deployment Methods (Server, Docker, Cloud)
-
-# Deployment, Build & Browser Setup Guide
-
-**Version:** 1.0.0  
+**Version:** 1.1.3  
 **Last Updated:** 2025-12-18
 
 ---
 
 ## Table of Contents
 
+- [Local Development Setup](#local-development-setup)
 - Pre-Deployment Checklist
 - Build Guide (Windows Executable)
 - Automated Build Script
@@ -40,6 +23,77 @@
 
 ---
 
+## Local Development Setup
+
+### Prerequisites
+
+1. **Python 3.10+** - [Download](https://www.python.org/downloads/)
+2. **Node.js 18+** - [Download](https://nodejs.org/)
+3. **yt-dlp.exe** - [Download](https://github.com/yt-dlp/yt-dlp/releases)
+4. **ffmpeg.exe** - [Download](https://ffmpeg.org/download.html)
+
+Place `yt-dlp.exe` and `ffmpeg.exe` in the project root directory.
+
+### Start Backend Server
+
+Open a terminal and run:
+
+```powershell
+# Navigate to backend
+cd backend
+
+# Create virtual environment (first time only)
+python -m venv venv
+
+# Activate virtual environment
+venv\Scripts\Activate      # Windows PowerShell
+# venv\Scripts\activate.bat  # Windows CMD
+# source venv/bin/activate   # macOS/Linux
+
+# Install dependencies (first time only)
+pip install -r requirements.txt
+
+# Start the server
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+**Backend URLs:**
+
+- API: http://localhost:8000
+- Swagger Docs: http://localhost:8000/api/docs
+- ReDoc: http://localhost:8000/api/redoc
+- Health Check: http://localhost:8000/api/health
+
+### Start Frontend Server
+
+Open a **second terminal** and run:
+
+```powershell
+# Navigate to frontend
+cd frontend
+
+# Install dependencies (first time only)
+npm install
+
+# Start development server
+npm run dev
+```
+
+**Frontend URL:** http://localhost:5173
+
+### Quick Start Script (Windows)
+
+You can also use the included batch file:
+
+```powershell
+# From project root
+.\start-dev.bat
+```
+
+This starts both servers in one command.
+
+---
+
 ## Pre-Deployment Checklist
 
 ### Security
@@ -47,7 +101,10 @@
 - [ ] Generate `SECRET_KEY` & `API_KEY` (`python generate_keys.py`)
 - [ ] Set `DEBUG=False` in `.env`
 - [ ] Enable API key auth (`ENABLE_API_KEY_AUTH=true`)
+- [ ] Enable CSRF protection (`ENABLE_CSRF_PROTECTION=true`)
+- [ ] Enable HTTPS redirect (`FORCE_HTTPS=true`)
 - [ ] Update `CORS_ORIGINS` to production domain(s)
+- [ ] Review rate limits
 - [ ] Review rate limits
 - [ ] Configure HTTPS/TLS
 - [ ] Set up firewall
@@ -109,7 +166,7 @@ pyinstaller "YouTube Downloader.spec"
 **Option B: Direct command (creates new spec file)**
 
 ```powershell
-pyinstaller --name "YT2MP3-Converter" --onefile --console YTMP3urlConverter.py
+pyinstaller --name "UMD-Converter" --onefile --console UMDConverter.py
 ```
 
 #### 3. Locate the Executable
@@ -123,8 +180,8 @@ dist\YouTube Downloader.exe
 #### 4. Test the Executable
 
 ```powershell
-.\dist\YT2MP3-Converter.exe --help
-.\dist\YT2MP3-Converter.exe https://youtube.com/watch?v=VIDEO_ID --cookies-browser firefox
+.\dist\UMD-Converter.exe --help
+.\dist\UMD-Converter.exe https://youtube.com/watch?v=VIDEO_ID --cookies-browser firefox
 ```
 
 ---
@@ -137,21 +194,21 @@ Create `build-exe.ps1`:
 # build-exe.ps1
 Write-Host "Cleaning previous builds..." -ForegroundColor Yellow
 if (Test-Path "build") { Remove-Item -Recurse -Force "build" }
-if (Test-Path "dist\YT2MP3-Converter.exe") { Remove-Item -Force "dist\YT2MP3-Converter.exe" }
+if (Test-Path "dist\UMD-Converter.exe") { Remove-Item -Force "dist\UMD-Converter.exe" }
 if (Test-Path "__pycache__") { Remove-Item -Recurse -Force "__pycache__" }
 Get-ChildItem -Recurse -Filter "*.pyc" | Remove-Item -Force
 Write-Host "Building executable..." -ForegroundColor Green
-pyinstaller --name "YT2MP3-Converter" `
+pyinstaller --name "UMD-Converter" `
     --onefile `
     --console `
     --clean `
     --add-data "config.example.json;." `
-    YTMP3urlConverter.py
+    UMDConverter.py
 if ($LASTEXITCODE -eq 0) {
     Write-Host "`nBuild successful!" -ForegroundColor Green
-    Write-Host "Executable location: dist\YT2MP3-Converter.exe" -ForegroundColor Cyan
+    Write-Host "Executable location: dist\UMD-Converter.exe" -ForegroundColor Cyan
     Write-Host "`nTesting executable..." -ForegroundColor Yellow
-    .\dist\YT2MP3-Converter.exe --help
+    .\dist\UMD-Converter.exe --help
 } else {
     Write-Host "`nBuild failed! Check errors above." -ForegroundColor Red
     exit 1
@@ -197,7 +254,7 @@ This section explains how to configure browser cookies for downloading from plat
 
 ```bash
 # Standalone script
-python YTMP3urlConverter.py <URL> --cookies-browser brave
+python UMDConverter.py <URL> --cookies-browser brave
 # Backend
 COOKIE_BROWSER=brave
 ```
@@ -217,13 +274,13 @@ Create `config.json`:
 Run:
 
 ```bash
-python YTMP3urlConverter.py --config config.json
+python UMDConverter.py --config config.json
 ```
 
 #### Testing
 
 ```bash
-python YTMP3urlConverter.py https://x.com/user/status/123456 --cookies-browser brave --verbose
+python UMDConverter.py https://x.com/user/status/123456 --cookies-browser brave --verbose
 # If it works, you'll see the download start
 # If it fails with authentication errors, check that you're logged into Twitter/X in Brave
 ```
@@ -258,7 +315,7 @@ python YTMP3urlConverter.py https://x.com/user/status/123456 --cookies-browser b
 
 Include the following when distributing:
 
-1. YT2MP3-Converter.exe
+1. UMD-Converter.exe
 2. yt-dlp.exe
 3. ffmpeg.exe
 4. config.example.json
@@ -267,8 +324,8 @@ Include the following when distributing:
 Directory structure:
 
 ```
-YT2MP3-Converter/
-├── YT2MP3-Converter.exe
+UMD-Converter/
+├── UMD-Converter.exe
 ├── yt-dlp.exe
 ├── ffmpeg.exe
 ├── config.example.json
@@ -393,7 +450,7 @@ sudo su - ytdl
 ```bash
 # Clone repository
 cd /opt/youtube-downloader
-git clone https://github.com/your-username/YT2MP3url.git .
+git clone https://github.com/your-username/UMD.git .
 
 # Set up backend
 cd backend

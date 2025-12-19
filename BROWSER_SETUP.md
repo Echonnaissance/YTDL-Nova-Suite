@@ -26,7 +26,7 @@ Brave is Chromium-based, so yt-dlp can access its cookies the same way as Chrome
 
 ```bash
 # Standalone script
-python YTMP3urlConverter.py <URL> --cookies-browser brave
+python UMDConverter.py <URL> --cookies-browser brave
 
 # Backend (.env file)
 COOKIE_BROWSER=brave
@@ -60,7 +60,7 @@ If you're using regular Firefox with Tor proxy configured (via add-ons or manual
 
 ```bash
 # Standalone script
-python YTMP3urlConverter.py <URL> --cookies-browser firefox
+python UMDConverter.py <URL> --cookies-browser firefox
 
 # Backend (.env file)
 COOKIE_BROWSER=firefox
@@ -86,13 +86,13 @@ COOKIE_BROWSER=firefox
 **Using Brave (Recommended):**
 
 ```bash
-python YTMP3urlConverter.py https://x.com/user/status/123456 --cookies-browser brave
+python UMDConverter.py https://x.com/user/status/123456 --cookies-browser brave
 ```
 
 **Using Firefox with Tor:**
 
 ```bash
-python YTMP3urlConverter.py https://x.com/user/status/123456 --cookies-browser firefox
+python UMDConverter.py https://x.com/user/status/123456 --cookies-browser firefox
 ```
 
 ### For Backend (Web App)
@@ -122,7 +122,7 @@ COOKIE_BROWSER=brave
 **Run:**
 
 ```bash
-python YTMP3urlConverter.py --config config.json
+python UMDConverter.py --config config.json
 ```
 
 ## Troubleshooting
@@ -200,7 +200,7 @@ To test if cookies are working:
 
 ```bash
 # Test with a Twitter/X URL
-python YTMP3urlConverter.py https://x.com/user/status/123456 --cookies-browser brave --verbose
+python UMDConverter.py https://x.com/user/status/123456 --cookies-browser brave --verbose
 
 # If it works, you'll see the download start
 # If it fails with authentication errors, check that you're logged into Twitter/X in Brave

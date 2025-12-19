@@ -77,7 +77,7 @@ All notable changes, improvements, and applied fixes for the YouTube Downloader 
 
 ### Major Features
 
-- Desktop Application (YTMP3urlConverter.py):
+- Desktop Application (UniversalMediaDownloader.py):
   - Modern GUI (tkinter/ttk)
   - Video/audio download, playlist preview, batch mode
   - Progress tracking, thumbnail embedding, dark mode
@@ -107,11 +107,11 @@ All notable changes, improvements, and applied fixes for the YouTube Downloader 
 
 ```bash
 # Basic usage
-python YTMP3urlConverter.py https://youtube.com/watch?v=VIDEO_ID
+python UniversalMediaDownloader.py https://youtube.com/watch?v=VIDEO_ID
 # With options
-python YTMP3urlConverter.py https://x.com/user/status/123456 --cookies-browser chrome
+python UniversalMediaDownloader.py https://x.com/user/status/123456 --cookies-browser chrome
 # Using config file
-python YTMP3urlConverter.py --config config.json
+python UniversalMediaDownloader.py --config config.json
 ```
 
 ---
@@ -184,4 +184,4 @@ python YTMP3urlConverter.py --config config.json
 
 **Maintained by:** Echonnaissance  
 **License:** Educational purposes  
-**Repository:** YT2MP3url
+**Repository:** UMD

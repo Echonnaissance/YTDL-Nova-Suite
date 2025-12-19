@@ -1,6 +1,4 @@
-# PyInstaller spec file for UniversalMediaDownloader CLI tool
-# (Renamed from YTMP3urlConverter.spec)
-# Update paths and names as needed for UniversalMediaDownloader
+# PyInstaller spec file for UMD (Universal Media Downloader) CLI tool
 
 block_cipher = None
 
@@ -27,7 +25,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='UniversalMediaDownloader',
+    name='UMD-Converter',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -44,4 +42,4 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='UniversalMediaDownloader')
+    name='UMD-Converter')

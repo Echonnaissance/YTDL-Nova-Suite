@@ -52,8 +52,8 @@ Before contributing, ensure you have:
 
 1. **Fork and Clone**
    ```bash
-   git clone https://github.com/your-username/YT2MP3url.git
-   cd YT2MP3url
+   git clone https://github.com/your-username/UMD.git
+   cd UMD
    ```
 
 2. **Backend Setup**

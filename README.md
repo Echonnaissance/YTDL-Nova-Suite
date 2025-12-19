@@ -42,37 +42,45 @@ A modern, full-stack video/audio downloader built with FastAPI (backend) and Rea
 
 ## 🚀 Quick Start
 
-```bash
-# Backend
+### Prerequisites
+
+1. **Python 3.10+** - [Download](https://www.python.org/downloads/)
+2. **Node.js 18+** - [Download](https://nodejs.org/)
+3. **yt-dlp.exe** - [Download](https://github.com/yt-dlp/yt-dlp/releases) → Place in project root
+4. **ffmpeg.exe** - [Download](https://ffmpeg.org/download.html) → Place in project root
+
+### Start Backend (Terminal 1)
+
+```powershell
 cd backend
 python -m venv venv
-venv\Scripts\activate          # Windows
-# source venv/bin/activate     # macOS/Linux
+venv\Scripts\Activate      # Windows
+# source venv/bin/activate # macOS/Linux
 pip install -r requirements.txt
-python -m app.main
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
 
-# Frontend (new terminal)
+Backend runs at: **http://localhost:8000**  
+API Docs at: **http://localhost:8000/api/docs**
+
+### Start Frontend (Terminal 2)
+
+```powershell
 cd frontend
 npm install
 npm run dev
-
-# Open: http://localhost:5173
 ```
 
-**Prerequisites:**
+Frontend runs at: **http://localhost:5173**
 
-- Place `ffmpeg.exe` and `yt-dlp.exe` in the project root (same directory as `backend/` and `frontend/`).
-  - [yt-dlp Download](https://github.com/yt-dlp/yt-dlp/releases)
-  - [FFmpeg Download](https://ffmpeg.org/download.html)
-
-**Project Structure:**
+### Project Structure
 
 ```
-YT2MP3url/
-├── ffmpeg.exe
-├── yt-dlp.exe
-├── backend/
-└── frontend/
+UMD/
+├── ffmpeg.exe      # Required - media processing
+├── yt-dlp.exe      # Required - video downloader
+├── backend/        # FastAPI server
+└── frontend/       # React app
 ```
 
 ---
@@ -155,7 +163,7 @@ YT2MP3url/
 ## Project Structure
 
 ```
-YT2MP3url/
+UMD/
 ├── backend/                          # FastAPI Backend
 │   ├── app/
 │   │   ├── api/                      # API Layer
@@ -656,19 +664,19 @@ Before deploying to production:
 
 ## Standalone CLI Script
 
-The project includes a standalone command-line script (`YTMP3urlConverter.py`) for quick downloads without running the full web application.
+The project includes a standalone command-line script (`UniversalMediaDownloader.py`) for quick downloads without running the full web application.
 
 ### Usage
 
 ```bash
 # Basic usage
-python YTMP3urlConverter.py https://youtube.com/watch?v=VIDEO_ID
+python UniversalMediaDownloader.py https://youtube.com/watch?v=VIDEO_ID
 
 # With options
-python YTMP3urlConverter.py https://x.com/user/status/123456 --cookies-browser chrome --output-dir Downloads/Video
+python UniversalMediaDownloader.py https://x.com/user/status/123456 --cookies-browser chrome --output-dir Downloads/Video
 
 # Using configuration file
-python YTMP3urlConverter.py --config config.json
+python UniversalMediaDownloader.py --config config.json
 ```
 
 ### Options

@@ -9,7 +9,7 @@ Your project has a solid foundation with a professional full-stack architecture.
 ## 🔴 Critical Issues (Fix First)
 
 ### 1. **Standalone Script - Hardcoded Configuration**
-**File**: `YTMP3urlConverter.py`
+**File**: `UniversalMediaDownloader.py`
 
 **Issues**:
 - Hardcoded Twitter URL (line 11)
@@ -43,7 +43,7 @@ Your project has a solid foundation with a professional full-stack architecture.
 ## 🟡 High Priority Improvements
 
 ### 4. **Standalone Script Path Issues**
-**File**: `YTMP3urlConverter.py`
+**File**: `UniversalMediaDownloader.py`
 
 **Issue**: Lines 7-9 point to `dist/` but based on project structure, executables are in root:
 - Current: `os.path.join("dist", "yt-dlp.exe")`
@@ -56,7 +56,7 @@ Your project has a solid foundation with a professional full-stack architecture.
 4. Project root
 
 ### 5. **Error Handling & Logging**
-**File**: `YTMP3urlConverter.py`
+**File**: `UniversalMediaDownloader.py`
 
 **Issues**:
 - No structured logging
@@ -70,7 +70,7 @@ Your project has a solid foundation with a professional full-stack architecture.
 - Better error messages with actionable suggestions
 
 ### 6. **Code Duplication**
-**Files**: `YTMP3urlConverter.py` and `backend/app/services/ytdlp_service.py`
+**Files**: `UniversalMediaDownloader.py` and `backend/app/services/ytdlp_service.py`
 
 **Issue**: Similar yt-dlp command construction logic exists in both files
 
@@ -81,7 +81,7 @@ Your project has a solid foundation with a professional full-stack architecture.
 ## 🟢 Medium Priority Improvements
 
 ### 7. **Configuration Management**
-**File**: `YTMP3urlConverter.py`
+**File**: `UniversalMediaDownloader.py`
 
 **Issue**: Configuration is hardcoded at the top of the file
 
@@ -91,7 +91,7 @@ Your project has a solid foundation with a professional full-stack architecture.
 - Command-line arguments with defaults
 
 ### 8. **Progress Tracking**
-**File**: `YTMP3urlConverter.py`
+**File**: `UniversalMediaDownloader.py`
 
 **Issue**: Basic print statements, no structured progress information
 
@@ -138,21 +138,21 @@ Your project has a solid foundation with a professional full-stack architecture.
 - Automated releases
 
 ### 13. **Type Hints**
-**File**: `YTMP3urlConverter.py`
+**File**: `UniversalMediaDownloader.py`
 
 **Issue**: No type hints (backend has them)
 
 **Recommendation**: Add type hints for better IDE support and documentation
 
 ### 14. **Async Support**
-**File**: `YTMP3urlConverter.py`
+**File**: `UniversalMediaDownloader.py`
 
 **Issue**: Synchronous execution blocks
 
 **Recommendation**: Consider async/await for better performance with multiple downloads
 
 ### 15. **Batch Download Support**
-**File**: `YTMP3urlConverter.py`
+**File**: `UniversalMediaDownloader.py`
 
 **Issue**: Only handles single URL
 
