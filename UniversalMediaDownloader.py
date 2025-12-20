@@ -84,7 +84,27 @@ def main(argv: Optional[List[str]] = None) -> int:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.abspath(os.path.join(script_dir, ".."))
 
+    # If the user runs the script from a different working directory, and the
+    # bundled `yt-dlp` lives next to the script but isn't on PATH, show a
+    # clearer error that explains how to run the script from the project root
+    # or using the full script path.
+    cwd = os.path.abspath(os.getcwd())
+    bundled_exe = 'yt-dlp.exe' if sys.platform == 'win32' else 'yt-dlp'
+    bundled_path = os.path.join(script_dir, bundled_exe)
+
+    # Locate yt-dlp (searches PATH and common locations)
     ytdlp_path = find_ytdlp(script_dir, project_root)
+
+    # If user ran from a different cwd, the bundled exe exists next to the
+    # script, but it wasn't found in PATH, provide a helpful error and exit.
+    if cwd != script_dir and os.path.exists(bundled_path) and not ytdlp_path:
+        print(f"Error: it looks like you ran the script from {cwd},")
+        print(f"but the bundled {bundled_exe} is located in {script_dir}.")
+        print("Run from the project root or invoke the script with its full path:")
+        print(
+            f"  python \"{os.path.join(script_dir, os.path.basename(__file__))}\" --help")
+        print("Or add the project directory to your PATH so bundled executables are found.")
+        return 4
     _ = find_ffmpeg(script_dir, project_root)
 
     parser = argparse.ArgumentParser(description="Universal Media Downloader")

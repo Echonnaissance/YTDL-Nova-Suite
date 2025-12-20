@@ -58,14 +58,89 @@ class YTDLPService:
         Prefers cookies file over browser cookies to avoid DPAPI issues on Windows.
         """
         # Prefer cookies file (avoids Windows DPAPI decryption issues)
+        import os
         if settings.COOKIES_FILE:
-            import os
             if os.path.exists(settings.COOKIES_FILE):
                 cmd.extend(["--cookies", settings.COOKIES_FILE])
                 return
-        # Fall back to browser cookies
+
+        # If COOKIE_BROWSER is set, try to export cookies to a file using
+        # browser_cookie3 to avoid DPAPI decryption issues on Windows.
         if settings.COOKIE_BROWSER:
+            try:
+                exported = self._export_cookies_via_browser(
+                    settings.COOKIE_BROWSER)
+                if exported:
+                    cmd.extend(["--cookies", exported])
+                    return
+            except Exception:
+                # Fall back to yt-dlp native browser cookie reader (may trigger DPAPI)
+                pass
+
+            # Fall back: use yt-dlp's --cookies-from-browser (may fail on some systems)
             cmd.extend(["--cookies-from-browser", settings.COOKIE_BROWSER])
+
+    def _export_cookies_via_browser(self, browser_name: Optional[str]) -> Optional[str]:
+        """
+        Try to export cookies from the user's browser to a Netscape-format file.
+        Returns the path to the exported cookies file, or None on failure.
+        """
+        try:
+            import browser_cookie3
+        except Exception:
+            return None
+
+        # Map common names to browser_cookie3 helpers
+        helpers = {
+            "chrome": getattr(browser_cookie3, "chrome", None),
+            "chromium": getattr(browser_cookie3, "chromium", None),
+            "edge": getattr(browser_cookie3, "edge", None),
+            "brave": getattr(browser_cookie3, "brave", None),
+            "opera": getattr(browser_cookie3, "opera", None),
+            "firefox": getattr(browser_cookie3, "firefox", None),
+            "safari": getattr(browser_cookie3, "safari", None),
+        }
+
+        helper = helpers.get(browser_name.lower()) if browser_name else None
+        if helper is None:
+            # If no specific helper, try generic loader
+            try:
+                cj = browser_cookie3.load()
+            except Exception:
+                return None
+        else:
+            try:
+                cj = helper()
+            except Exception:
+                try:
+                    cj = browser_cookie3.load()
+                except Exception:
+                    return None
+
+        # Write Netscape-format cookies file
+        try:
+            output_path = Path(settings.BASE_DIR) / "backend" / "cookies.txt"
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with output_path.open("w", encoding="utf-8") as f:
+                f.write("# Netscape HTTP Cookie File\n")
+                for cookie in cj:
+                    domain = cookie.domain
+                    flag = "TRUE" if getattr(
+                        cookie, "domain_specified", False) else "FALSE"
+                    path = cookie.path
+                    secure = "TRUE" if getattr(
+                        cookie, "secure", False) else "FALSE"
+                    expires_val = getattr(cookie, "expires", None)
+                    expires = str(int(expires_val)
+                                  ) if expires_val is not None else "0"
+                    name = cookie.name
+                    value = cookie.value
+                    f.write(
+                        f"{domain}\t{flag}\t{path}\t{secure}\t{expires}\t{name}\t{value}\n")
+
+            return str(output_path)
+        except Exception:
+            return None
 
     def _get_video_info_sync(self, url: str) -> Dict[str, Any]:
         """Synchronous helper for get_video_info"""
@@ -116,7 +191,19 @@ class YTDLPService:
         except subprocess.TimeoutExpired:
             raise YTDLPError("Video info extraction timed out")
         except subprocess.CalledProcessError as e:
-            raise YTDLPError(f"Failed to extract video info: {e.stderr}")
+            msg = f"Failed to extract video info: {e.stderr}"
+            # Detect DPAPI/browser cookie errors and attempt automated export+retry
+            if "DPAPI" in e.stderr or "Could not copy Chrome cookie database" in e.stderr:
+                exported = None
+                try:
+                    exported = self._export_cookies_via_browser(
+                        settings.COOKIE_BROWSER)
+                    if exported:
+                        settings.COOKIES_FILE = exported
+                        return await asyncio.to_thread(self._get_video_info_sync, url)
+                except Exception:
+                    pass
+            raise YTDLPError(msg)
         except json.JSONDecodeError:
             raise YTDLPError("Failed to parse video information")
 
@@ -171,7 +258,17 @@ class YTDLPService:
         except subprocess.TimeoutExpired:
             raise YTDLPError("Playlist info extraction timed out")
         except subprocess.CalledProcessError as e:
-            raise YTDLPError(f"Failed to extract playlist info: {e.stderr}")
+            msg = f"Failed to extract playlist info: {e.stderr}"
+            if "DPAPI" in e.stderr or "Could not copy Chrome cookie database" in e.stderr:
+                try:
+                    exported = self._export_cookies_via_browser(
+                        settings.COOKIE_BROWSER)
+                    if exported:
+                        settings.COOKIES_FILE = exported
+                        return await asyncio.to_thread(self._get_playlist_info_sync, url)
+                except Exception:
+                    pass
+            raise YTDLPError(msg)
         except json.JSONDecodeError as e:
             raise YTDLPError(f"Failed to parse playlist information: {str(e)}")
 
@@ -333,7 +430,29 @@ class YTDLPService:
         try:
             return await asyncio.to_thread(self._execute_download_sync, cmd, progress_callback)
         except Exception as e:
-            raise YTDLPError(f"Download execution failed: {str(e)}")
+            err_str = str(e)
+            # On DPAPI/browser cookie errors, attempt export and retry once
+            if "DPAPI" in err_str or "Could not copy Chrome cookie database" in err_str:
+                try:
+                    exported = self._export_cookies_via_browser(
+                        settings.COOKIE_BROWSER)
+                    if exported:
+                        settings.COOKIES_FILE = exported
+                        # rebuild cmd to prefer --cookies if necessary
+                        if "--cookies-from-browser" in cmd:
+                            # remove --cookies-from-browser and its arg
+                            try:
+                                idx = cmd.index("--cookies-from-browser")
+                                # remove flag and following browser name
+                                del cmd[idx:idx+2]
+                            except ValueError:
+                                pass
+                        if "--cookies" not in cmd:
+                            cmd = [*cmd, "--cookies", exported]
+                        return await asyncio.to_thread(self._execute_download_sync, cmd, progress_callback)
+                except Exception:
+                    pass
+            raise YTDLPError(f"Download execution failed: {err_str}")
 
     def _parse_progress(self, line: str) -> Optional[Dict[str, Any]]:
         """
