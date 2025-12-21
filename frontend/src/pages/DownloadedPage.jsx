@@ -82,11 +82,14 @@ export default function DownloadedPage() {
 
   const handleReveal = (item) => {
     if (item.file_path) {
-      navigator.clipboard?.writeText(item.file_path).then(() => {
-        alert("File path copied to clipboard");
-      }, () => {
-        alert(item.file_path);
-      });
+      navigator.clipboard?.writeText(item.file_path).then(
+        () => {
+          alert("File path copied to clipboard");
+        },
+        () => {
+          alert(item.file_path);
+        }
+      );
     } else {
       alert("File path not available");
     }
@@ -103,37 +106,55 @@ export default function DownloadedPage() {
       <div className="downloaded-container">
         <div className="player-column">
           {selected ? (
-            <>
-              <div className="player-column">
-                {selected ? (
-                  <>
-                    <div className="player-card">
-                      <div className="player-controls">
-                        <button className="btn" onClick={handlePrev} title="Previous">◀◀</button>
-                        <button className="btn" onClick={handleNext} title="Next">▶▶</button>
-                        <label className="autoplay-toggle">
-                          <input type="checkbox" checked={autoplay} onChange={handleToggleAutoplay} /> Autoplay
-                        </label>
-                        <div style={{flex:1}} />
-                        <button className="btn btn-danger" onClick={() => handleDelete(selected)}>Delete</button>
-                        <button className="btn" onClick={() => handleReveal(selected)}>Reveal</button>
-                      </div>
-                      <h3 className="player-title">{selected.title || selected.file_name}</h3>
-                      <video
-                        ref={videoRef}
-                        controls
-                        preload="metadata"
-                        src={selected.media_url || `/api/downloads/${selected.id}/file`}
-                        className="main-player"
-                      />
-                      {selected.file_size && <div className="file-meta">{Math.round(selected.file_size/1024/1024)} MB</div>}
-                      {selected.file_path && <div className="file-path">{selected.file_path}</div>}
-                    </div>
-                  </>
-                ) : (
-                  <p>Select a video on the right to play</p>
-                )}
+            <div className="player-card">
+              <div className="player-controls">
+                <button className="btn" onClick={handlePrev} title="Previous">
+                  ◀◀
+                </button>
+                <button className="btn" onClick={handleNext} title="Next">
+                  ▶▶
+                </button>
+                <label className="autoplay-toggle">
+                  <input
+                    type="checkbox"
+                    checked={autoplay}
+                    onChange={handleToggleAutoplay}
+                  />{" "}
+                  Autoplay
+                </label>
+                <div style={{ flex: 1 }} />
+                <button
+                  className="btn btn-danger"
+                  onClick={() => handleDelete(selected)}
+                >
+                  Delete
+                </button>
+                <button className="btn" onClick={() => handleReveal(selected)}>
+                  Reveal
+                </button>
               </div>
+              <h3 className="player-title">
+                {selected.title || selected.file_name}
+              </h3>
+              <video
+                ref={videoRef}
+                controls
+                preload="metadata"
+                src={selected.media_url || `/api/downloads/${selected.id}/file`}
+                className="main-player"
+              />
+              {selected.file_size && (
+                <div className="file-meta">
+                  {Math.round(selected.file_size / 1024 / 1024)} MB
+                </div>
+              )}
+              {selected.file_path && (
+                <div className="file-path">{selected.file_path}</div>
+              )}
+            </div>
+          ) : (
+            <p>Select a video on the right to play</p>
+          )}
         </div>
 
         <aside className="list-column" aria-label="Downloaded videos">
