@@ -20,6 +20,30 @@
   border-radius: 6px;
 }
 
+.player-controls {
+  display:flex;
+  gap:0.5rem;
+  align-items:center;
+  margin-bottom:0.5rem;
+}
+
+.btn {
+  background: var(--btn-bg, #f3f3f3);
+  border: 1px solid #ddd;
+  padding: 0.25rem 0.5rem;
+  border-radius:4px;
+  cursor:pointer;
+}
+.btn-danger {
+  background: #ffdddd;
+  border-color:#f99;
+}
+
+.autoplay-toggle { display:flex; align-items:center; gap:0.5rem }
+
+.file-meta { margin-top:0.5rem; color:var(--text-muted,#666); font-size:0.9rem }
+.file-path { font-size:0.8rem; color:var(--text-muted,#666); margin-top:0.25rem; word-break:break-all }
+
 .main-player {
   width: 100%;
   height: 60vh;
