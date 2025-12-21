@@ -45,18 +45,34 @@ from app.core.security import (
 from logging.handlers import RotatingFileHandler
 
 # SECURITY: Log rotation to prevent disk fill
-log_handler = RotatingFileHandler(
-    "app.log",
-    maxBytes=10 * 1024 * 1024,  # 10 MB per file
-    backupCount=5  # Keep 5 backup files
-)
-log_handler.setFormatter(logging.Formatter(settings.LOG_FORMAT))
+try:
+    log_handler = RotatingFileHandler(
+        "app.log",
+        maxBytes=10 * 1024 * 1024,  # 10 MB per file
+        backupCount=5,  # Keep 5 backup files
+        encoding="utf-8"  # UTF-8 for log file
+    )
+    log_handler.setFormatter(logging.Formatter(settings.LOG_FORMAT))
+except PermissionError:
+    # On Windows the file may be locked by another process (uvicorn reload
+    # worker). Fall back to a plain FileHandler to avoid crashing the app.
+    fh = logging.FileHandler("app.log", encoding="utf-8")
+    fh.setFormatter(logging.Formatter(settings.LOG_FORMAT))
+    log_handler = fh
+
+# Console handler with UTF-8 encoding and error handling for Windows
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(logging.Formatter(settings.LOG_FORMAT))
+# Configure UTF-8 with fallback for emojis that Windows console can't display
+if sys.platform == "win32":
+    # Use 'replace' to avoid crashes on unencodable characters
+    console_handler.stream.reconfigure(encoding="utf-8", errors="replace")
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL.upper()),
     format=settings.LOG_FORMAT,
     handlers=[
-        logging.StreamHandler(),
+        console_handler,
         log_handler
     ]
 )

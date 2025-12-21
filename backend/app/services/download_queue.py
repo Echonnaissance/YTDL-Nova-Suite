@@ -9,6 +9,7 @@ from datetime import datetime
 from app.models.database import Download, DownloadStatus, DownloadType, UserSettings
 from app.core.database import SessionLocal
 from app.services.ytdlp_service import YTDLPService
+from app.services.metadata_service import MetadataService
 from app.core.exceptions import YTDLPError, ServiceUnavailableError
 from app.config import settings as app_settings
 
@@ -25,6 +26,7 @@ class DownloadQueue:
         self.running = False
         self.worker_task: Optional[asyncio.Task] = None
         self.ytdlp = YTDLPService()
+        self.metadata = MetadataService()
 
     async def start(self):
         """Start the download queue worker"""
@@ -49,7 +51,8 @@ class DownloadQueue:
     async def add_download(self, download_id: int):
         """Add a download to the queue"""
         await self.queue.put(download_id)
-        print(f"[+] Added download {download_id} to queue (queue size: {self.queue.qsize()})")
+        print(
+            f"[+] Added download {download_id} to queue (queue size: {self.queue.qsize()})")
 
     async def _worker(self):
         """Main worker loop that processes downloads"""
@@ -83,7 +86,8 @@ class DownloadQueue:
         db = SessionLocal()
         try:
             # Get download from database
-            download = db.query(Download).filter(Download.id == download_id).first()
+            download = db.query(Download).filter(
+                Download.id == download_id).first()
             if not download:
                 print(f"[!] Download {download_id} not found in database")
                 return
@@ -119,7 +123,8 @@ class DownloadQueue:
                         custom_download_dir=custom_download_dir
                     )
                 else:
-                    raise ValueError(f"Unsupported download type: {download.download_type}")
+                    raise ValueError(
+                        f"Unsupported download type: {download.download_type}")
 
                 # Download succeeded
                 download.status = DownloadStatus.COMPLETED
@@ -129,6 +134,10 @@ class DownloadQueue:
                 db.commit()
                 print(f"[+] Download {download_id} completed: {file_path}")
 
+                # Automatically extract metadata and generate thumbnail
+                print(f"[*] Processing metadata for download {download_id}")
+                asyncio.create_task(self._process_metadata_async(download_id))
+
             except (YTDLPError, ServiceUnavailableError) as e:
                 # Download failed
                 download.status = DownloadStatus.FAILED
@@ -137,9 +146,11 @@ class DownloadQueue:
                 print(f"[!] Download {download_id} failed: {str(e)}")
 
         except Exception as e:
-            print(f"[!] Unexpected error processing download {download_id}: {str(e)}")
+            print(
+                f"[!] Unexpected error processing download {download_id}: {str(e)}")
             try:
-                download = db.query(Download).filter(Download.id == download_id).first()
+                download = db.query(Download).filter(
+                    Download.id == download_id).first()
                 if download:
                     download.status = DownloadStatus.FAILED
                     download.error_message = f"Internal error: {str(e)}"
@@ -149,6 +160,24 @@ class DownloadQueue:
 
         finally:
             self.active_downloads.discard(download_id)
+            db.close()
+
+    async def _process_metadata_async(self, download_id: int):
+        """
+        Process metadata in a background task
+        Extracts duration and generates thumbnail for a completed download
+        """
+        # Use a new DB session for background processing
+        db = SessionLocal()
+        try:
+            download = db.query(Download).filter(
+                Download.id == download_id).first()
+            if download and download.status == DownloadStatus.COMPLETED:
+                await self.metadata.process_download(download, db)
+        except Exception as e:
+            print(
+                f"[!] Error in background metadata processing for download {download_id}: {e}")
+        finally:
             db.close()
 
 
@@ -161,5 +190,6 @@ def get_download_queue() -> DownloadQueue:
     global _download_queue
     if _download_queue is None:
         from app.config import settings
-        _download_queue = DownloadQueue(max_concurrent=settings.MAX_CONCURRENT_DOWNLOADS)
+        _download_queue = DownloadQueue(
+            max_concurrent=settings.MAX_CONCURRENT_DOWNLOADS)
     return _download_queue

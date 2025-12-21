@@ -177,6 +177,7 @@ class YTDLPService:
             self.ytdlp_path,
             "--dump-json",
             "--no-playlist",
+            "--socket-timeout", "60",  # Increased from default for slow networks
         ]
 
         # Add cookie support (needed for Twitter/X, Instagram, etc.)
@@ -191,7 +192,7 @@ class YTDLPService:
             cmd,
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=120,  # Increased from 30s to allow metadata extraction
             check=True
         )
 
@@ -336,6 +337,9 @@ class YTDLPService:
             "-f", "bestvideo+bestaudio/best",
             "--merge-output-format", format,
             "--no-playlist",
+            "--socket-timeout", "60",  # Prevent socket timeouts on slow/large downloads
+            "--retries", "3",  # Retry failed chunks
+            "--fragment-retries", "10",  # Retry HLS/DASH fragments
         ]
 
         # Add cookie support (needed for Twitter/X, Instagram, etc.)
@@ -379,6 +383,9 @@ class YTDLPService:
             "--extract-audio",
             "--audio-format", format,
             "--no-playlist",
+            "--socket-timeout", "60",  # Prevent socket timeouts on slow/large downloads
+            "--retries", "3",  # Retry failed chunks
+            "--fragment-retries", "10",  # Retry HLS/DASH fragments
         ]
 
         # Add cookie support (needed for Twitter/X, Instagram, etc.)
@@ -470,24 +477,139 @@ class YTDLPService:
             if return_code == 0:
                 # Success, extract filename
                 downloaded_file = None
+
+                # Debug: print last 10 lines of output to see what we got
+                print("[*] yt-dlp output (last 10 lines):")
+                for line in output_lines[-10:]:
+                    print(f"    {line}")
+
                 for line in output_lines:
                     # Try various patterns to extract the file path
                     if "Destination:" in line:
                         match = re.search(r'Destination:\s+(.+)$', line)
                         if match:
                             downloaded_file = match.group(1).strip()
+                            print(
+                                f"[*] Matched 'Destination:' pattern: {downloaded_file}")
                     elif "Merging formats into" in line:
                         match = re.search(r'into\s+"(.+?)"', line)
                         if match:
                             downloaded_file = match.group(1).strip()
+                            print(
+                                f"[*] Matched 'Merging' pattern: {downloaded_file}")
                     elif "has already been downloaded" in line:
                         match = re.search(
                             r'\[download\]\s+(.+?)\s+has already been downloaded', line)
                         if match:
                             downloaded_file = match.group(1).strip()
+                            print(
+                                f"[*] Matched 'already downloaded' pattern: {downloaded_file}")
+                    # Add more comprehensive patterns
+                    elif "[download] 100%" in line and not downloaded_file:
+                        # Pattern: [download] 100% of 123.45MiB in 00:12
+                        # Look for the filename in subsequent lines or use output template
+                        pass
+                    elif "[Merger]" in line and "into" in line.lower():
+                        # Pattern: [Merger] Merging formats into "filename.ext"
+                        match = re.search(r'into\s+"([^"]+)"', line)
+                        if match:
+                            downloaded_file = match.group(1).strip()
+                            print(
+                                f"[*] Matched '[Merger]' pattern: {downloaded_file}")
 
                 if downloaded_file and os.path.exists(downloaded_file):
+                    print(f"[+] File found via regex: {downloaded_file}")
                     return downloaded_file
+                elif downloaded_file:
+                    print(
+                        f"[!] Regex matched '{downloaded_file}' but exact path doesn't exist")
+                    # Try finding a similar file (handle Unicode/character variations)
+                    try:
+                        from pathlib import Path
+                        import glob
+
+                        parent_dir = str(Path(downloaded_file).parent)
+                        # filename without extension
+                        base_name = Path(downloaded_file).stem
+                        # .mp4, .m4a, etc
+                        extension = Path(downloaded_file).suffix
+
+                        print(
+                            f"[*] Searching for similar files: {base_name}*{extension}")
+
+                        # Search for files with similar names
+                        if os.path.exists(parent_dir):
+                            for file in os.listdir(parent_dir):
+                                file_path = os.path.join(parent_dir, file)
+                                if os.path.isfile(file_path):
+                                    # Check if filename is similar (case-insensitive, handles character variations)
+                                    file_stem = Path(file).stem
+                                    file_ext = Path(file).suffix
+
+                                    # Match extension and similar base name (accounting for Unicode variations)
+                                    if file_ext.lower() == extension.lower():
+                                        # Normalize both names for comparison (remove special chars, lowercase)
+                                        normalized_expected = ''.join(
+                                            c.lower() for c in base_name if c.isalnum() or c.isspace())
+                                        normalized_actual = ''.join(
+                                            c.lower() for c in file_stem if c.isalnum() or c.isspace())
+
+                                        if normalized_expected == normalized_actual:
+                                            print(
+                                                f"[+] Found matching file with character variations: {file}")
+                                            return file_path
+                    except Exception as e:
+                        print(f"[!] Similar file search failed: {e}")
+
+                # Fallback: Find the most recently created file in the download directory
+                print("[*] Primary file path detection failed, trying fallback...")
+                try:
+                    import glob
+                    from pathlib import Path
+
+                    # Determine target directory based on command
+                    target_dir = None
+                    for i, arg in enumerate(cmd):
+                        if arg == '-o' and i + 1 < len(cmd):
+                            # Extract directory from output template
+                            output_template = cmd[i + 1]
+                            target_dir = str(Path(output_template).parent)
+                            break
+
+                    print(f"[*] Looking for recent files in: {target_dir}")
+
+                    if target_dir and os.path.exists(target_dir):
+                        # Find most recent file (modified in last 120 seconds)
+                        current_time = time.time()
+                        recent_files = []
+                        for file_path in glob.glob(os.path.join(target_dir, "*")):
+                            if os.path.isfile(file_path):
+                                # Use modification time (more reliable than creation)
+                                file_age = current_time - \
+                                    os.path.getmtime(file_path)
+                                if file_age < 120:  # Modified within last 120 seconds
+                                    recent_files.append((file_age, file_path))
+                                    print(
+                                        f"[*] Found recent file ({file_age:.1f}s ago): {os.path.basename(file_path)}")
+
+                        if recent_files:
+                            # Return the newest file
+                            recent_files.sort()
+                            most_recent = recent_files[0][1]
+                            print(
+                                f"[+] Detected downloaded file via fallback: {most_recent}")
+                            return most_recent
+                        else:
+                            print("[!] No recent files found in target directory")
+                    else:
+                        print(
+                            f"[!] Target directory not found or doesn't exist: {target_dir}")
+                except Exception as e:
+                    import traceback
+                    print(f"[!] Fallback file detection failed: {e}")
+                    traceback.print_exc()
+
+                print("[!] All file detection methods failed")
                 return "Download complete (file path could not be determined)"
 
             # Non-zero return code: check recent output for 403/Forbidden

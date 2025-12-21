@@ -151,4 +151,37 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    import sys
+    # Try to detect a live debugger more robustly. Prefer debugpy if available
+    # (used by VS Code), fallback to sys.gettrace().
+    debugging = False
+    try:
+        from importlib import util, import_module
+
+        spec = util.find_spec("debugpy")
+        if spec is not None:
+            debugpy = import_module("debugpy")
+            try:
+                debugging = debugpy.is_client_connected()
+            except Exception:
+                debugging = bool(sys.gettrace())
+        else:
+            debugging = bool(sys.gettrace())
+    except Exception:
+        debugging = bool(sys.gettrace())
+
+    try:
+        rc = main()
+        # If main returned a non-zero integer, exit when not debugging
+        if isinstance(rc, int) and rc != 0:
+            if debugging:
+                # running under a debugger: avoid terminating the session
+                print(f"Program would exit with code {rc}")
+            else:
+                sys.exit(rc)
+    except SystemExit as e:
+        # If under a debugger, print the exit code and avoid re-raising so the debugger doesn't stop
+        if debugging:
+            print(f"Program exited with code {e.code}")
+        else:
+            raise

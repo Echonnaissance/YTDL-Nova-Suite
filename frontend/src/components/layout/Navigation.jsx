@@ -111,7 +111,7 @@ export default function Navigation() {
               <span className="nav-icon" aria-hidden="true">
                 🎞️
               </span>
-              <span>Downloaded</span>
+              <span>Video Player</span>
             </NavLink>
           </li>
         </ul>

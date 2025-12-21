@@ -107,9 +107,9 @@ class Settings(BaseSettings):
     ENABLE_AUTO_CLEANUP: bool = False  # Enable scheduled cleanup
 
     # Rate Limiting
-    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_ENABLED: bool = False
     RATE_LIMIT_PER_MINUTE: int = 60  # Requests per minute
-    RATE_LIMIT_PER_HOUR: int = 1000  # Requests per hour
+    RATE_LIMIT_PER_HOUR: int = 10000  # Requests per hour
 
     # Request Size Limits (in bytes)
     MAX_REQUEST_SIZE: int = 1024 * 1024  # 1 MB

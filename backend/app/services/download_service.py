@@ -14,6 +14,64 @@ from app.services.ytdlp_service import YTDLPService
 from app.core.exceptions import DownloadNotFoundError, InvalidURLError
 from app.config import settings
 from pathlib import Path
+import os
+from typing import Any
+
+
+def _make_absolute_media_urls(data: dict) -> dict:
+    """
+    Ensure `thumbnail_url` and `media_url` are absolute URLs pointing at the backend.
+    This prevents the browser from resolving relative `/media/...` paths to the
+    frontend dev server origin (Vite) which runs on a different port.
+    """
+    try:
+        scheme = "https" if getattr(settings, "FORCE_HTTPS", False) else "http"
+        host = getattr(settings, "HOST", "127.0.0.1")
+        port = getattr(settings, "PORT", 8000)
+        base = f"{scheme}://{host}:{port}".rstrip("/")
+
+        # Normalize thumbnail_url
+        tu = data.get("thumbnail_url")
+        if tu and isinstance(tu, str):
+            if tu.startswith("http"):
+                # If absolute but points at a different host/port (e.g. Vite dev server),
+                # rewrite to backend base while preserving path and query.
+                from urllib.parse import urlparse, urlunparse
+                parsed = urlparse(tu)
+                netloc = f"{host}:{port}"
+                if parsed.netloc != netloc:
+                    new = parsed._replace(scheme=scheme, netloc=netloc)
+                    data["thumbnail_url"] = urlunparse(new)
+            else:
+                # Ensure leading slash
+                if not tu.startswith("/"):
+                    tu = "/" + tu
+                data["thumbnail_url"] = base + tu
+
+        # Normalize media_url if present
+        mu = data.get("media_url")
+        if mu and isinstance(mu, str):
+            if mu.startswith("http"):
+                from urllib.parse import urlparse, urlunparse
+                parsed = urlparse(mu)
+                netloc = f"{host}:{port}"
+                if parsed.netloc != netloc:
+                    new = parsed._replace(scheme=scheme, netloc=netloc)
+                    data["media_url"] = urlunparse(new)
+            else:
+                if not mu.startswith("/"):
+                    mu = "/" + mu
+                data["media_url"] = base + mu
+
+    except Exception:
+        # If anything goes wrong, don't block response; return original data
+        return data
+    return data
+
+
+def _set_attr(obj: Any, name: str, value: Any) -> None:
+    """Safely set attribute on SQLAlchemy model instances to avoid static type checks."""
+    setattr(obj, name, value)
 
 
 class DownloadService:
@@ -65,9 +123,10 @@ class DownloadService:
         if resp.file_path:
             rel = str(Path(resp.file_path).resolve()).replace(
                 str(settings.DOWNLOAD_DIR.resolve()), "").lstrip("/\\")
-            media_url = f"/media/{rel.replace('\\\\', '/')}"
+            media_url = f"/media/{rel.replace(os.sep, '/')}"
             data = resp.model_dump()
             data["media_url"] = media_url
+            data = _make_absolute_media_urls(data)
             return DownloadResponse.model_validate(data)
 
         return resp
@@ -86,9 +145,10 @@ class DownloadService:
         if resp.file_path:
             rel = str(Path(resp.file_path).resolve()).replace(
                 str(settings.DOWNLOAD_DIR.resolve()), "").lstrip("/\\")
-            media_url = f"/media/{rel.replace('\\\\', '/')}"
+            media_url = f"/media/{rel.replace(os.sep, '/')}"
             data = resp.model_dump()
             data["media_url"] = media_url
+            data = _make_absolute_media_urls(data)
             return DownloadResponse.model_validate(data)
         return resp
 
@@ -114,9 +174,10 @@ class DownloadService:
             if resp.file_path:
                 rel = str(Path(resp.file_path).resolve()).replace(
                     str(settings.DOWNLOAD_DIR.resolve()), "").lstrip("/\\")
-                media_url = f"/media/{rel.replace('\\\\', '/')}"
+                media_url = f"/media/{rel.replace(os.sep, '/')}"
                 data = resp.model_dump()
                 data["media_url"] = media_url
+                data = _make_absolute_media_urls(data)
                 results.append(DownloadResponse.model_validate(data))
             else:
                 results.append(resp)
@@ -141,9 +202,10 @@ class DownloadService:
             if resp.file_path:
                 rel = str(Path(resp.file_path).resolve()).replace(
                     str(settings.DOWNLOAD_DIR.resolve()), "").lstrip("/\\")
-                media_url = f"/media/{rel.replace('\\\\', '/')}"
+                media_url = f"/media/{rel.replace(os.sep, '/')}"
                 data = resp.model_dump()
                 data["media_url"] = media_url
+                data = _make_absolute_media_urls(data)
                 results.append(DownloadResponse.model_validate(data))
             else:
                 results.append(resp)
@@ -168,28 +230,28 @@ class DownloadService:
         if not download:
             raise DownloadNotFoundError(f"Download {download_id} not found")
 
-        # Update fields
-        download.status = status
+        # Update fields (use helper to avoid static type-checker issues)
+        _set_attr(download, 'status', status)
 
         if progress is not None:
-            download.progress = progress
+            _set_attr(download, 'progress', progress)
 
         if speed is not None:
-            download.speed = speed
+            _set_attr(download, 'speed', speed)
 
         if eta is not None:
-            download.eta = eta
+            _set_attr(download, 'eta', eta)
 
         if error_message is not None:
-            download.error_message = error_message
+            _set_attr(download, 'error_message', error_message)
 
         # Update timestamps
-        if status == DownloadStatus.DOWNLOADING and not download.started_at:
-            download.started_at = datetime.now()
+        if status == DownloadStatus.DOWNLOADING and (download.started_at is None):
+            _set_attr(download, 'started_at', datetime.now())
 
         if status == DownloadStatus.COMPLETED:
-            download.completed_at = datetime.now()
-            download.progress = 100.0
+            _set_attr(download, 'completed_at', datetime.now())
+            _set_attr(download, 'progress', 100.0)
 
         self.db.commit()
         self.db.refresh(download)
@@ -198,9 +260,10 @@ class DownloadService:
         if resp.file_path:
             rel = str(Path(resp.file_path).resolve()).replace(
                 str(settings.DOWNLOAD_DIR.resolve()), "").lstrip("/\\")
-            media_url = f"/media/{rel.replace('\\\\', '/')}"
+            media_url = f"/media/{rel.replace(os.sep, '/')}"
             data = resp.model_dump()
             data["media_url"] = media_url
+            data = _make_absolute_media_urls(data)
             return DownloadResponse.model_validate(data)
         return resp
 
@@ -220,13 +283,13 @@ class DownloadService:
         if not download:
             raise DownloadNotFoundError(f"Download {download_id} not found")
 
-        download.file_path = file_path
+        _set_attr(download, 'file_path', file_path)
 
         if file_size is not None:
-            download.file_size = file_size
+            _set_attr(download, 'file_size', file_size)
 
         if file_name is not None:
-            download.file_name = file_name
+            _set_attr(download, 'file_name', file_name)
 
         self.db.commit()
         self.db.refresh(download)
@@ -235,9 +298,10 @@ class DownloadService:
         if resp.file_path:
             rel = str(Path(resp.file_path).resolve()).replace(
                 str(settings.DOWNLOAD_DIR.resolve()), "").lstrip("/\\")
-            media_url = f"/media/{rel.replace('\\\\', '/')}"
+            media_url = f"/media/{rel.replace(os.sep, '/')}"
             data = resp.model_dump()
             data["media_url"] = media_url
+            data = _make_absolute_media_urls(data)
             return DownloadResponse.model_validate(data)
         return resp
 
@@ -275,10 +339,11 @@ class DownloadService:
         if not download:
             raise DownloadNotFoundError(f"Download {download_id} not found")
 
-        download.status = DownloadStatus.PENDING
-        download.progress = 0.0
-        download.error_message = None
-        download.retry_count += 1
+        _set_attr(download, 'status', DownloadStatus.PENDING)
+        _set_attr(download, 'progress', 0.0)
+        _set_attr(download, 'error_message', None)
+        # increment retry_count safely
+        _set_attr(download, 'retry_count', (download.retry_count or 0) + 1)
 
         self.db.commit()
         self.db.refresh(download)
@@ -290,6 +355,7 @@ class DownloadService:
             media_url = f"/media/{rel.replace('\\\\', '/')}"
             data = resp.model_dump()
             data["media_url"] = media_url
+            data = _make_absolute_media_urls(data)
             return DownloadResponse.model_validate(data)
         return resp
 

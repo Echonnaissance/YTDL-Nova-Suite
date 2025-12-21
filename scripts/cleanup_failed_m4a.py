@@ -1,6 +1,6 @@
 """
 Cleanup script: delete failed downloads with format 'm4a'
-Usage: backend\venv\Scripts\python.exe scripts\cleanup_failed_m4a.py
+Usage: backend\\venv\\Scripts\\python.exe scripts\\cleanup_failed_m4a.py
 """
 import requests
 
