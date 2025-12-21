@@ -7,7 +7,8 @@
   --list-active-bg: rgba(0, 120, 215, 0.06);
 }
 
-[data-theme="dark"], .theme-dark {
+[data-theme="dark"],
+.theme-dark {
   --nav-hover-bg: rgba(255, 255, 255, 0.04);
   --list-active-bg: rgba(0, 120, 215, 0.12);
 }
@@ -15,7 +16,7 @@
 .downloaded-container {
   display: grid;
   /* Player grows to fill remaining space while list column stays fixed */
-  grid-template-columns: 1fr 320px; /* flexible player, fixed 320px list */
+  grid-template-columns: 1fr 260px; /* flexible player, fixed list (260px) */
   grid-auto-rows: 1.5fr;
   gap: 2rem;
   align-items: start;
@@ -41,29 +42,26 @@
   min-height: 0; /* allow children to shrink inside the grid cell */
   font-size: 24px;
   font-weight: 500;
-  line-height: 1.4;  
+  line-height: 1.4;
 }
 
 /* player-card base: add transitions so theater toggle animates smoothly */
 .player-card {
-  transition: transform 260ms cubic-bezier(.2,.8,.2,1),
-              box-shadow 260ms ease,
-              opacity 180ms ease;
+  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 260ms ease, opacity 180ms ease;
   transform-origin: center top;
   will-change: transform, box-shadow, opacity;
-  
 }
 
 .player-controls {
-  display: none; /* default: use native browser controls */
+  display: normal;
+  /* default:use "none" to hide native browser controls; normal to show custom */
   gap: 0.5rem;
   align-items: center;
   margin: 0.5rem 0 0 0;
-  
 }
 .player-card.show-custom .player-controls {
   display: flex;
-  
 }
 
 .btn {
@@ -79,24 +77,49 @@
   border-color: var(--btn-danger-border, #f99);
 }
 
-.autoplay-toggle { display:flex; align-items:center; gap:0.5rem }
+.autoplay-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 
-.file-meta { margin-top:0.5rem; color:var(--text-muted,#666); font-size:0.9rem }
-.file-path { font-size:0.8rem; color:var(--text-muted,#666); margin-top:0.25rem; word-break:break-all }
+.file-meta {
+  margin-top: 0.5rem;
+  color: var(--text-muted, #666);
+  font-size: 0.9rem;
+}
+.file-path {
+  font-size: 0.8rem;
+  color: var(--text-muted, #666);
+  margin-top: 0.25rem;
+  word-break: break-all;
+}
 
 .video-wrapper {
   /* larger player while keeping list column fixed */
   width: 100%;
   aspect-ratio: 16/9;
-  max-height: calc(75vh - 3rem);
-  margin: 0 auto;
+  max-height: calc(85vh - 3rem);
+  margin: 1rem auto;
   background: var(--player-bg, #000);
   border-radius: 6px;
   overflow: hidden;
   position: relative;
 }
 
-.video-overlay { display: none; }
+/* Large player modifier (toggle) */
+.player-card.large {
+  transform: scale(1.02);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+}
+.player-card.large .video-wrapper {
+  max-height: calc(90vh - 4rem);
+}
+
+.video-overlay {
+  display: none;
+}
 
 .player-card.show-custom .player-controls {
   display: flex;
@@ -116,7 +139,7 @@
 .controls-bar {
   pointer-events: auto;
   margin: 0.6rem;
-  background: rgba(0,0,0,0.45);
+  background: rgba(0, 0, 0, 0.45);
   border-radius: 8px;
   padding: 0.35rem 0.5rem;
   display: flex;
@@ -133,9 +156,12 @@
   cursor: pointer;
 }
 
-.controls-bar .control:hover { background: rgba(255,255,255,0.06); transform: translateY(-2px); }
+.controls-bar .control:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-2px);
+}
 
-.volume-control input[type="range"]{
+.volume-control input[type="range"] {
   width: 80px;
 }
 
@@ -162,7 +188,7 @@
   padding: 0.75rem;
   background: var(--bg-elevated);
   border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
 }
 .player-card.theater .video-wrapper {
   aspect-ratio: 16/9;
@@ -213,12 +239,15 @@
 }
 
 .autoplay-btn {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   color: #fff;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   padding: 0.25rem 0.5rem;
 }
-.autoplay-btn.active { background: rgba(0,160,90,0.15); border-color: rgba(0,160,90,0.3); }
+.autoplay-btn.active {
+  background: rgba(0, 160, 90, 0.15);
+  border-color: rgba(0, 160, 90, 0.3);
+}
 
 .list-item {
   display: flex;
@@ -256,8 +285,8 @@
 .list-title {
   font-weight: 600;
   color: var(--text, inherit);
-  display: -webkit-box;       /* multi-line clamp */
-  -webkit-line-clamp: 2;     /* allow up to 2 lines */
+  display: -webkit-box; /* multi-line clamp */
+  -webkit-line-clamp: 2; /* allow up to 2 lines */
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
@@ -275,6 +304,7 @@
   margin-top: 0.25rem;
   font-size: 0.75rem;
   color: var(--text-muted, #666);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono",
+    "Courier New", monospace;
   word-break: break-all;
 }

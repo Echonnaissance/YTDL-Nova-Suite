@@ -21,6 +21,7 @@ export default function DownloadedPage() {
   const [localFiles, setLocalFiles] = useState([]);
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
+  const [largePlayer, setLargePlayer] = useState(false);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -371,9 +372,41 @@ export default function DownloadedPage() {
             </button>
             <button
               className="btn btn-small"
-              onClick={() =>
-                folderInputRef.current && folderInputRef.current.click()
-              }
+              onClick={async () => {
+                // Prefer File System Access API for true folder selection when available
+                if (window.showDirectoryPicker) {
+                  try {
+                    const dirHandle = await window.showDirectoryPicker();
+                    const collected = [];
+
+                    const recurse = async (handle, prefix = "") => {
+                      for await (const [name, entry] of handle.entries()) {
+                        if (entry.kind === "file") {
+                          const f = await entry.getFile();
+                          try {
+                            Object.defineProperty(f, "webkitRelativePath", {
+                              value: prefix + name,
+                              writable: false,
+                              configurable: true,
+                            });
+                          } catch (e) {}
+                          collected.push(f);
+                        } else if (entry.kind === "directory") {
+                          await recurse(entry, prefix + name + "/");
+                        }
+                      }
+                    };
+
+                    await recurse(dirHandle, "");
+                    addLocalFiles(collected);
+                  } catch (err) {
+                    // fallback to hidden input if API unavailable or user cancels
+                    folderInputRef.current && folderInputRef.current.click();
+                  }
+                } else {
+                  folderInputRef.current && folderInputRef.current.click();
+                }
+              }}
             >
               Open Folder
             </button>
@@ -385,6 +418,13 @@ export default function DownloadedPage() {
               style={{ display: "none" }}
               onChange={handleFileInput}
             />
+            <button
+              className="btn btn-small"
+              onClick={() => setLargePlayer((v) => !v)}
+              title="Toggle large player"
+            >
+              {largePlayer ? "Normal Size" : "Large Player"}
+            </button>
             <input
               ref={folderInputRef}
               type="file"
@@ -397,7 +437,11 @@ export default function DownloadedPage() {
             />
           </div>
           {selected ? (
-            <div className={`player-card ${theater ? "theater" : ""}`}>
+            <div
+              className={`player-card ${theater ? "theater" : ""} ${
+                largePlayer ? "large" : ""
+              }`}
+            >
               {/* prefer media_url (served at /media) and convert to absolute URL so cross-origin range requests work consistently */}
               {(() => {
                 const backendOrigin =
