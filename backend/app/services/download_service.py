@@ -12,6 +12,8 @@ from app.models.database import Download, DownloadStatus, DownloadType
 from app.models.schemas import DownloadRequest, DownloadResponse
 from app.services.ytdlp_service import YTDLPService
 from app.core.exceptions import DownloadNotFoundError, InvalidURLError
+from app.config import settings
+from pathlib import Path
 
 
 class DownloadService:
@@ -58,7 +60,17 @@ class DownloadService:
         self.db.commit()
         self.db.refresh(download)
 
-        return DownloadResponse.model_validate(download)
+        resp = DownloadResponse.model_validate(download)
+        # Attach media_url if file_path present
+        if resp.file_path:
+            rel = str(Path(resp.file_path).resolve()).replace(
+                str(settings.DOWNLOAD_DIR.resolve()), "").lstrip("/\\")
+            media_url = f"/media/{rel.replace('\\\\', '/')}"
+            data = resp.model_dump()
+            data["media_url"] = media_url
+            return DownloadResponse.model_validate(data)
+
+        return resp
 
     async def get_download(self, download_id: int) -> DownloadResponse:
         """
@@ -70,7 +82,15 @@ class DownloadService:
         if not download:
             raise DownloadNotFoundError(f"Download {download_id} not found")
 
-        return DownloadResponse.model_validate(download)
+        resp = DownloadResponse.model_validate(download)
+        if resp.file_path:
+            rel = str(Path(resp.file_path).resolve()).replace(
+                str(settings.DOWNLOAD_DIR.resolve()), "").lstrip("/\\")
+            media_url = f"/media/{rel.replace('\\\\', '/')}"
+            data = resp.model_dump()
+            data["media_url"] = media_url
+            return DownloadResponse.model_validate(data)
+        return resp
 
     async def get_all_downloads(
         self,
@@ -88,7 +108,20 @@ class DownloadService:
 
         downloads = query.offset(skip).limit(limit).all()
 
-        return [DownloadResponse.model_validate(d) for d in downloads]
+        results = []
+        for d in downloads:
+            resp = DownloadResponse.model_validate(d)
+            if resp.file_path:
+                rel = str(Path(resp.file_path).resolve()).replace(
+                    str(settings.DOWNLOAD_DIR.resolve()), "").lstrip("/\\")
+                media_url = f"/media/{rel.replace('\\\\', '/')}"
+                data = resp.model_dump()
+                data["media_url"] = media_url
+                results.append(DownloadResponse.model_validate(data))
+            else:
+                results.append(resp)
+
+        return results
 
     async def get_active_downloads(self) -> List[DownloadResponse]:
         """
@@ -102,7 +135,20 @@ class DownloadService:
             ])
         ).all()
 
-        return [DownloadResponse.model_validate(d) for d in downloads]
+        results = []
+        for d in downloads:
+            resp = DownloadResponse.model_validate(d)
+            if resp.file_path:
+                rel = str(Path(resp.file_path).resolve()).replace(
+                    str(settings.DOWNLOAD_DIR.resolve()), "").lstrip("/\\")
+                media_url = f"/media/{rel.replace('\\\\', '/')}"
+                data = resp.model_dump()
+                data["media_url"] = media_url
+                results.append(DownloadResponse.model_validate(data))
+            else:
+                results.append(resp)
+
+        return results
 
     async def update_download_status(
         self,
@@ -148,7 +194,15 @@ class DownloadService:
         self.db.commit()
         self.db.refresh(download)
 
-        return DownloadResponse.model_validate(download)
+        resp = DownloadResponse.model_validate(download)
+        if resp.file_path:
+            rel = str(Path(resp.file_path).resolve()).replace(
+                str(settings.DOWNLOAD_DIR.resolve()), "").lstrip("/\\")
+            media_url = f"/media/{rel.replace('\\\\', '/')}"
+            data = resp.model_dump()
+            data["media_url"] = media_url
+            return DownloadResponse.model_validate(data)
+        return resp
 
     async def update_download_file_info(
         self,
@@ -177,7 +231,15 @@ class DownloadService:
         self.db.commit()
         self.db.refresh(download)
 
-        return DownloadResponse.model_validate(download)
+        resp = DownloadResponse.model_validate(download)
+        if resp.file_path:
+            rel = str(Path(resp.file_path).resolve()).replace(
+                str(settings.DOWNLOAD_DIR.resolve()), "").lstrip("/\\")
+            media_url = f"/media/{rel.replace('\\\\', '/')}"
+            data = resp.model_dump()
+            data["media_url"] = media_url
+            return DownloadResponse.model_validate(data)
+        return resp
 
     async def delete_download(self, download_id: int) -> bool:
         """
@@ -221,7 +283,15 @@ class DownloadService:
         self.db.commit()
         self.db.refresh(download)
 
-        return DownloadResponse.model_validate(download)
+        resp = DownloadResponse.model_validate(download)
+        if resp.file_path:
+            rel = str(Path(resp.file_path).resolve()).replace(
+                str(settings.DOWNLOAD_DIR.resolve()), "").lstrip("/\\")
+            media_url = f"/media/{rel.replace('\\\\', '/')}"
+            data = resp.model_dump()
+            data["media_url"] = media_url
+            return DownloadResponse.model_validate(data)
+        return resp
 
     async def get_download_stats(self) -> dict:
         """

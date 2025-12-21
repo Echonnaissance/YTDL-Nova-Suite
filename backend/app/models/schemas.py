@@ -97,6 +97,7 @@ class DownloadResponse(BaseModel):
     completed_at: Optional[datetime] = None
     playlist_title: Optional[str] = None
     playlist_index: Optional[int] = None
+    media_url: Optional[str] = None
 
     model_config = {
         "from_attributes": True  # Allows creating from SQLAlchemy models

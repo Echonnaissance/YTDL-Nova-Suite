@@ -7,6 +7,7 @@ from app.api.routes import downloads
 from fastapi import FastAPI, Request, status, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from typing import Any, cast
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -127,6 +128,13 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json"
+)
+
+# Serve downloaded media files under /media for frontend playback
+app.mount(
+    "/media",
+    StaticFiles(directory=str(settings.DOWNLOAD_DIR), html=False),
+    name="media"
 )
 
 # Attach limiter to app state
