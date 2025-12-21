@@ -136,18 +136,11 @@ export default function DownloadList({ statusFilter = null }) {
                   <span className="download-quality">{download.quality}</span>
                 )}
               </div>
-              {download.status === "processing" &&
-                download.progress !== null && (
-                  <div className="download-progress">
-                    <div className="progress-bar">
-                      <div
-                        className="progress-fill"
-                        style={{ width: `${download.progress}%` }}
-                      ></div>
-                    </div>
-                    <span className="progress-text">{download.progress}%</span>
-                  </div>
-                )}
+              {download.status === "processing" && (
+                <div className="download-progress simple">
+                  <span className="progress-text">Downloading…</span>
+                </div>
+              )}
               {download.error_message && (
                 <p className="download-error">{download.error_message}</p>
               )}

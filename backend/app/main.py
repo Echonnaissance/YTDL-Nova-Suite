@@ -4,7 +4,7 @@ Main application file that sets up the FastAPI app, middleware, and routes
 """
 from app.api.routes import settings as settings_router
 from app.api.routes import downloads
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, status, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager

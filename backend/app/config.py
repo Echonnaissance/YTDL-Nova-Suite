@@ -121,7 +121,7 @@ class Settings(BaseSettings):
 
     # When True, print the final yt-dlp command at INFO level for easier debugging
     # (otherwise it is logged at DEBUG level).
-    YTDLP_DEBUG: bool = False
+    YTDLP_DEBUG: bool = True
 
     # Download Limits (SECURITY: Prevent disk exhaustion)
     MAX_FILE_SIZE: int = 5 * 1024 * 1024 * 1024  # 5 GB per file

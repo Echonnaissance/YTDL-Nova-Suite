@@ -87,27 +87,6 @@ class YTDLPService:
             # Fall back: use yt-dlp's --cookies-from-browser (may fail on some systems)
             cmd.extend(["--cookies-from-browser", settings.COOKIE_BROWSER])
 
-        def _detect_js_runtime_args(self) -> Optional[list]:
-            """Detect node or deno in PATH and return yt-dlp js runtime args."""
-            try:
-                node_path = shutil.which("node")
-                if node_path:
-                    return ["--js-runtimes", "node"]
-                deno_path = shutil.which("deno")
-                if deno_path:
-                    return ["--js-runtimes", "deno"]
-            except Exception:
-                pass
-            return None
-
-        def _add_js_runtime_args(self, cmd: list) -> None:
-            """Append detected js runtime args to command if available."""
-            if self.js_runtime_args:
-                # insert before the URL (assume URL is last positional arg)
-                # but simply extend early so flags appear before URL
-                # many commands append URL at the end, so safe to extend now
-                cmd.extend(self.js_runtime_args)
-
     def _export_cookies_via_browser(self, browser_name: Optional[str]) -> Optional[str]:
         """
         Try to export cookies from the user's browser to a Netscape-format file.
@@ -170,6 +149,27 @@ class YTDLPService:
             return str(output_path)
         except Exception:
             return None
+
+    def _detect_js_runtime_args(self) -> Optional[list]:
+        """Detect node or deno in PATH and return yt-dlp js runtime args."""
+        try:
+            node_path = shutil.which("node")
+            if node_path:
+                return ["--js-runtimes", "node"]
+            deno_path = shutil.which("deno")
+            if deno_path:
+                return ["--js-runtimes", "deno"]
+        except Exception:
+            pass
+        return None
+
+    def _add_js_runtime_args(self, cmd: list) -> None:
+        """Append detected js runtime args to command if available."""
+        if self.js_runtime_args:
+            # insert before the URL (assume URL is last positional arg)
+            # but simply extend early so flags appear before URL
+            # many commands append URL at the end, so safe to extend now
+            cmd.extend(self.js_runtime_args)
 
     def _get_video_info_sync(self, url: str) -> Dict[str, Any]:
         """Synchronous helper for get_video_info"""

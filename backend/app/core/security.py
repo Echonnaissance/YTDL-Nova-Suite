@@ -241,20 +241,36 @@ def sanitize_url(url: str) -> str:
     # SECURITY: Normalize Unicode to catch fullwidth/variant characters
     normalized_url = unicodedata.normalize('NFKC', decoded_url)
 
-    # Characters that could be used for command injection
-    dangerous_chars = [";", "|", "&", "$", "`", "\\",
+    # Characters that could be used for command injection (exclude '&' here
+    # because it's a valid separator in query strings like YouTube playlist URLs)
+    dangerous_chars = [";", "|", "$", "`", "\\",
                        "\n", "\r", "(", ")", "{", "}", "<", ">", "\x00"]
 
-    # Check both original and decoded for dangerous characters
-    for check_url in [url, decoded_url, normalized_url]:
+    # Parse early so we can validate specific components separately
+    parsed_early = urllib.parse.urlparse(url)
+
+    # Check components (except query) for dangerous characters
+    components_to_check = [parsed_early.path, parsed_early.params,
+                           parsed_early.fragment, parsed_early.username or '',
+                           parsed_early.password or '', parsed_early.netloc or '']
+
+    for comp in components_to_check:
         for char in dangerous_chars:
-            if char in check_url:
+            if char in comp:
                 logger.warning(
-                    f"Dangerous character '{repr(char)}' found in URL: {url}")
+                    f"Dangerous character '{repr(char)}' found in URL component: {url}")
                 raise ValueError(
-                    f"URL contains forbidden character. "
-                    "Possible command injection attempt."
+                    "URL contains forbidden character in path/netloc/fragment."
                 )
+
+    # For the query string: allow common separators such as '&' and '=' but
+    # still reject control characters or null bytes if present after decoding
+    decoded_query = urllib.parse.unquote(parsed_early.query or '')
+    for char in ["\n", "\r", "\x00", "`", "|", ";"]:
+        if char in decoded_query:
+            logger.warning(
+                f"Dangerous character '{repr(char)}' found in query string: {url}")
+            raise ValueError("URL query contains forbidden characters")
 
     # SECURITY: Parse and validate URL structure
     try:
