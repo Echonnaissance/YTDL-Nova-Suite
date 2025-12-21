@@ -1,0 +1,26 @@
+.downloaded-page {
+  padding: 1rem;
+}
+.downloaded-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+.downloaded-item {
+  border: 1px solid var(--border-color, #e6e6e6);
+  padding: 0.75rem;
+  border-radius: 6px;
+}
+.downloaded-thumb {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+.downloaded-video {
+  width: 100%;
+  max-height: 360px;
+}
+.downloaded-title {
+  margin: 0 0 0.5rem 0;
+}
