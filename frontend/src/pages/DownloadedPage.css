@@ -16,12 +16,12 @@
 .downloaded-container {
   display: grid;
   /* Player grows to fill remaining space while list column stays fixed */
-  grid-template-columns: 1fr 260px; /* flexible player, fixed list (260px) */
+  grid-template-columns: 1fr 60px 1fr; /* flexible player, fixed list (360px) */
   grid-auto-rows: 1.5fr;
-  gap: 2rem;
+  gap: 1.5rem;
   align-items: start;
-  width: 100%;
-  height: 100vh;
+  width: 1920px;
+  height: 1080px;
 }
 
 .player-column {
@@ -41,14 +41,17 @@
   align-items: normal;
   min-height: 0; /* allow children to shrink inside the grid cell */
   font-size: 24px;
-  font-weight: 500;
+  font-weight: 100;
   line-height: 1.4;
 }
 
 /* player-card base: add transitions so theater toggle animates smoothly */
 .player-card {
-  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 260ms ease, opacity 180ms ease;
+  /* smooth expand without overshoot */
+  transition: transform 360ms cubic-bezier(0.22, 0.8, 0.2, 1),
+    box-shadow 360ms ease, opacity 300ms ease;
+  /* adaptive shadow: JS sets --video-shadow when enabled */
+  box-shadow: var(--video-shadow, 0 10px 40px rgba(0, 0, 0, 0.45));
   transform-origin: center top;
   will-change: transform, box-shadow, opacity;
 }
@@ -109,9 +112,10 @@
 
 /* Large player modifier (toggle) */
 .player-card.large {
-  transform: scale(1.02);
-  transition: transform 200ms ease, box-shadow 200ms ease;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  transform: scale(1.06);
+  transition: transform 360ms cubic-bezier(0.22, 0.8, 0.2, 1),
+    box-shadow 360ms ease;
+  box-shadow: 0 14px 48px rgba(0, 0, 0, 0.45);
 }
 .player-card.large .video-wrapper {
   max-height: calc(90vh - 4rem);
@@ -224,18 +228,28 @@
 }
 
 .list-column {
-  width: 320px; /* fixed width to keep player stable */
+  width: 360px; /* fixed width to keep player stable */
+  box-sizing: border-box;
   flex: none;
   max-height: calc(100vh - 120px);
   overflow-y: auto;
+  overflow-x: hidden; /* prevent horizontal scroll */
   border: 1px solid var(--border-color);
   padding: 0.5rem;
   border-radius: 6px;
   background: var(--bg-secondary);
   position: static;
   top: 1rem;
-  align-self: start;
+  align-self: flex-start;
   min-width: 0;
+  /* hide the visible vertical scrollbar while keeping scroll functionality */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.list-column::-webkit-scrollbar {
+  width: 0px;
+  background: transparent; /* Chrome/Safari */
 }
 
 .autoplay-btn {
@@ -297,14 +311,15 @@
 
 .list-sub {
   color: var(--text-muted, #666);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .thumb-url {
   margin-top: 0.25rem;
+  display: block;
   font-size: 0.75rem;
   color: var(--text-muted, #666);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono",
     "Courier New", monospace;
-  word-break: break-all;
+  word-break: auto-phrase;
 }

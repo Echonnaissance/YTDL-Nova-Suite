@@ -10,6 +10,9 @@ export default function DownloadedPage() {
   const [selected, setSelected] = useState(null);
   const [autoplay, setAutoplay] = useState(true);
   const videoRef = useRef(null);
+  const playerCardRef = useRef(null);
+  const shadowCanvasRef = useRef(null);
+  const [adaptiveShadow, setAdaptiveShadow] = useState(false);
   const lastToggleRef = useRef(0);
   const controlsRestoreTimerRef = useRef(null);
   const containerRef = useRef(null);
@@ -294,6 +297,70 @@ export default function DownloadedPage() {
     }
   }, [selected, autoplay]);
 
+  // load adaptiveShadow pref from localStorage on mount
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("umd.adaptiveShadow");
+      if (v !== null) setAdaptiveShadow(v === "1");
+    } catch (e) {}
+  }, []);
+
+  // Adaptive shadow sampler (throttled, safe for cross-origin)
+  useEffect(() => {
+    if (!adaptiveShadow) return;
+    const video = videoRef.current;
+    const el = playerCardRef.current;
+    if (!video || !el) return;
+
+    let raf = 0;
+    let last = 0;
+    const canvas = shadowCanvasRef.current || document.createElement("canvas");
+    canvas.width = 32;
+    canvas.height = 18; // small 16:9 sample
+    shadowCanvasRef.current = canvas;
+    const ctx = canvas.getContext("2d");
+
+    const sample = () => {
+      try {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let r = 0,
+          g = 0,
+          b = 0,
+          count = 0;
+        // sample every 4th pixel for speed
+        for (let i = 0; i < data.length; i += 16) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+          count++;
+        }
+        if (count === 0) return;
+        r = Math.round(r / count);
+        g = Math.round(g / count);
+        b = Math.round(b / count);
+
+        const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+        const alpha = Math.min(0.6, 0.28 + (0.5 - luminance) * 0.5);
+        const spread = luminance > 0.6 ? "0 8px 28px" : "0 12px 48px";
+        const shadow = `${spread} rgba(${r}, ${g}, ${b}, ${alpha.toFixed(2)})`;
+        el.style.setProperty("--video-shadow", shadow);
+      } catch (err) {
+        // likely CORS or other issue; stop sampling silently
+      }
+    };
+
+    const loop = (t) => {
+      if (t - last > 160) {
+        sample();
+        last = t;
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [adaptiveShadow, selected]);
+
   const findIndex = (item) => combinedList.findIndex((d) => d.id === item.id);
 
   const handleNext = () => {
@@ -320,6 +387,41 @@ export default function DownloadedPage() {
       } catch (err) {}
       return nv;
     });
+
+  const handleToggleTheater = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const el = playerCardRef.current;
+    if (!el) return setTheater((t) => !t);
+    // FLIP: measure start, toggle state to apply final layout, then animate transform
+    const start = el.getBoundingClientRect();
+    setTheater((t) => !t);
+    requestAnimationFrame(() => {
+      const end = el.getBoundingClientRect();
+      // guard
+      if (end.width === 0 || end.height === 0) return;
+      const dx = start.left - end.left;
+      const dy = start.top - end.top;
+      const sx = start.width / end.width;
+      const sy = start.height / end.height;
+      // apply inverse transform immediately without transition
+      el.style.transition = "none";
+      el.style.transformOrigin = "center top";
+      el.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+      // force reflow
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      el.offsetWidth;
+      // animate to identity
+      el.style.transition =
+        "transform 420ms cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 420ms ease, opacity 300ms ease";
+      el.style.transform = "";
+      const cleanup = () => {
+        el.style.transition = "";
+        el.style.transform = "";
+        el.removeEventListener("transitionend", cleanup);
+      };
+      el.addEventListener("transitionend", cleanup);
+    });
+  };
 
   const handleDelete = async (item) => {
     if (!confirm(`Delete "${item.title || item.file_name}"?`)) return;
@@ -410,6 +512,30 @@ export default function DownloadedPage() {
             >
               Open Folder
             </button>
+            {typeof window !== "undefined" &&
+              (window.location.hostname === "localhost" ||
+                window.location.hostname === "127.0.0.1") && (
+                <button
+                  className="btn btn-small"
+                  onClick={() => {
+                    setAdaptiveShadow((v) => {
+                      const nv = !v;
+                      try {
+                        localStorage.setItem(
+                          "umd.adaptiveShadow",
+                          nv ? "1" : "0"
+                        );
+                      } catch (e) {}
+                      return nv;
+                    });
+                  }}
+                  title="Toggle adaptive shadow (dev)"
+                >
+                  {adaptiveShadow
+                    ? "Adaptive Shadow: On"
+                    : "Adaptive Shadow: Off"}
+                </button>
+              )}
             <input
               ref={fileInputRef}
               type="file"
@@ -418,13 +544,6 @@ export default function DownloadedPage() {
               style={{ display: "none" }}
               onChange={handleFileInput}
             />
-            <button
-              className="btn btn-small"
-              onClick={() => setLargePlayer((v) => !v)}
-              title="Toggle large player"
-            >
-              {largePlayer ? "Normal Size" : "Large Player"}
-            </button>
             <input
               ref={folderInputRef}
               type="file"
@@ -438,6 +557,7 @@ export default function DownloadedPage() {
           </div>
           {selected ? (
             <div
+              ref={playerCardRef}
               className={`player-card ${theater ? "theater" : ""} ${
                 largePlayer ? "large" : ""
               }`}
@@ -506,19 +626,7 @@ export default function DownloadedPage() {
                         >
                           {isPlaying ? "❚❚" : "▶"}
                         </button>
-                        <button
-                          className={`btn control autoplay-btn ${
-                            autoplay ? "active" : ""
-                          }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleAutoplay();
-                          }}
-                          title="Toggle Autoplay"
-                          aria-pressed={autoplay}
-                        >
-                          {autoplay ? "Autoplay On" : "Autoplay Off"}
-                        </button>
+
                         <button
                           className="btn control next"
                           onClick={(e) => {
@@ -540,35 +648,25 @@ export default function DownloadedPage() {
                             aria-label="Volume"
                           />
                         </div>
-                        <label className="autoplay-toggle inline">
-                          <input
-                            type="checkbox"
-                            checked={autoplay}
-                            onChange={handleToggleAutoplay}
-                          />
-                          <span>Autoplay</span>
-                        </label>
+                        <button
+                          className={`btn control autoplay-btn ${
+                            autoplay ? "active" : ""
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleAutoplay();
+                          }}
+                          title="Toggle Autoplay"
+                          aria-pressed={autoplay}
+                        >
+                          {autoplay ? "Autoplay On" : "Autoplay Off"}
+                        </button>
                       </div>
 
                       <div className="controls-right" role="group">
                         <button
-                          className="btn control fs"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            try {
-                              videoRef.current?.requestFullscreen?.();
-                            } catch (err) {}
-                          }}
-                          title="Fullscreen"
-                        >
-                          ⤢
-                        </button>
-                        <button
                           className="btn control theater-toggle"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setTheater((t) => !t);
-                          }}
+                          onClick={handleToggleTheater}
                           title="Toggle theater mode"
                         >
                           {theater ? "Exit" : "Theater"}
