@@ -67,17 +67,15 @@
 }
 
 .downloaded-container {
-  display: grid;
-  /* make main player dominant: flexible large column + fixed sidebar */
-  grid-template-columns: minmax(0, 1.5fr) var(--list-width);
-  grid-template-areas: "player list";
+  /* Use flex row so both columns naturally match the container height.
+     Left column grows, right column keeps fixed width. */
+  display: flex;
+  flex-direction: row;
   gap: var(--gap);
   align-items: stretch;
   max-width: none;
   margin: 0;
   width: 100%;
-  /* let content size determine height; avoid forcing a container height that can cut off the player */
-  height: auto;
 }
 
 .player-column {
@@ -85,11 +83,11 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  height: 100%;
+  /* let the left column grow */
+  flex: 1 1 auto;
   /* minimal inner padding so player can take most horizontal space */
-  padding: 0.125rem 0.25rem;
-  /* allow the player area to scroll if content exceeds viewport instead of cutting off */
-  overflow: auto;
+  padding: 0.125rem 0.25rem 0.125rem 1rem;
+  overflow: visible;
   background: var(--bg-elevated);
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -111,7 +109,7 @@
 }
 
 .player-card.large {
-  transform: scale(1.06);
+  transform: scale(1);
   transition: transform 360ms cubic-bezier(0.22, 0.8, 0.2, 1),
     box-shadow 360ms ease;
   box-shadow: 0 14px 48px rgba(0, 0, 0, 0.45);
@@ -232,18 +230,19 @@
 /* ---------------- List / Sidebar ---------------- */
 .list-column {
   width: var(--list-width);
-  /* fill the container height and scroll independently */
-  height: 100%;
+  /* Make the sidebar sticky at the same top offset as the video wrapper
+     and let it fill down to the bottom of the viewport so it's flush with the screen. */
+  position: sticky;
+  top: var(--player-viewport-top, 0px);
+  height: calc(100vh - var(--player-viewport-top, 0px) - 8px);
   overflow-y: auto;
   overflow-x: hidden;
   border: 1px solid var(--border-color);
   padding: 0.5rem;
   border-radius: 6px;
   background: var(--bg-secondary);
-  align-self: stretch;
   scrollbar-width: none;
-  /* keep sidebar visually separate and independent while scrolling */
-  position: relative;
+  align-self: flex-start;
 }
 
 /* place list in right grid area */
