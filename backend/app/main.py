@@ -5,6 +5,7 @@ Main application file that sets up the FastAPI app, middleware, and routes
 from app.api.routes import settings as settings_router
 from app.api.routes import downloads
 from app.api.routes import local_media
+from app.api.routes import persistent_media
 from fastapi import FastAPI, Request, status, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -67,7 +68,20 @@ console_handler.setFormatter(logging.Formatter(settings.LOG_FORMAT))
 # Configure UTF-8 with fallback for emojis that Windows console can't display
 if sys.platform == "win32":
     # Use 'replace' to avoid crashes on unencodable characters
-    console_handler.stream.reconfigure(encoding="utf-8", errors="replace")
+    stream = console_handler.stream
+    reconfigure = getattr(stream, "reconfigure", None)
+    if callable(reconfigure):
+        reconfigure(encoding="utf-8", errors="replace")
+    else:
+        try:
+            import io
+            if hasattr(stream, "buffer"):
+                console_handler.stream = io.TextIOWrapper(
+                    stream.buffer, encoding="utf-8", errors="replace", line_buffering=True
+                )
+        except Exception:
+            # Best-effort fallback: ignore if we cannot reconfigure/wrap the stream
+            pass
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL.upper()),
@@ -443,6 +457,7 @@ async def cleanup_downloads(expiry_days: int = 7):
 app.include_router(downloads.router, prefix="/api")
 app.include_router(settings_router.router, prefix="/api")
 app.include_router(local_media.router, prefix="/api")
+app.include_router(persistent_media.router, prefix="/api")
 # app.include_router(queue.router, prefix="/api")  # TODO: Create queue routes
 # app.include_router(history.router, prefix="/api")  # TODO: Create history routes
 

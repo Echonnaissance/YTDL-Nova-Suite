@@ -129,8 +129,14 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 2
 
     if not args.url:
-        parser.print_help()
-        return 1
+        try:
+            args.url = input(
+                'Enter URL to download (or press Enter to cancel): ').strip()
+        except (EOFError, KeyboardInterrupt):
+            args.url = ''
+        if not args.url:
+            print('No URL provided. Exiting.')
+            return 1
 
     output_dir = os.path.abspath(args.output)
     os.makedirs(output_dir, exist_ok=True)

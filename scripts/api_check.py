@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
-"""Fetch recent downloads from the API and test range support for the first media_url found."""
-import json
+"""api_check.py - simple interactive checks for backend API and media HEAD
+
+Run with no arguments; it will fetch recent downloads and attempt a HEAD
+request for the first available `media_url`.
+"""
 import urllib.request
 import urllib.parse
 import urllib.error
+import json
 import sys
 
-API = 'http://127.0.0.1:8000/api/downloads?limit=20'
 BASE = 'http://127.0.0.1:8000'
+API = BASE + '/api/downloads/?limit=10'
 
 
 def fetch_json(url):
-    with urllib.request.urlopen(url) as r:
+    req = urllib.request.Request(url)
+    with urllib.request.urlopen(req) as r:
         return json.load(r)
 
 
@@ -29,23 +34,23 @@ def head_request(url):
         print('HEAD HTTPError:', code if code is not None else reason)
         headers = getattr(e, 'headers', None)
         if headers:
-            # headers may be a mapping or an email.message.Message; try common access patterns
             try:
                 for k, v in headers.items():
                     print(f'{k}: {v}')
             except Exception:
-                try:
-                    for k in headers:
-                        print(f'{k}: {headers[k]}')
-                except Exception:
-                    print('HEAD HTTPError: headers present but could not be iterated')
+                pass
     except urllib.error.URLError as e:
         print('HEAD URLError:', getattr(e, 'reason', str(e)))
 
 
 def main():
     print('Fetching', API)
-    data = fetch_json(API)
+    try:
+        data = fetch_json(API)
+    except Exception as e:
+        print('Failed to fetch API:', e)
+        sys.exit(2)
+
     print(f'Got {len(data)} records')
 
     found = None

@@ -14,6 +14,7 @@ from pathlib import Path
 import sqlite3
 import sys
 import os
+import argparse
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -33,6 +34,13 @@ def normalized_thumb_path(url: str) -> Path | None:
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description='Rename videos and thumbnails sequentially')
+    parser.add_argument('--dry-run', action='store_true',
+                        help='Show actions without making changes')
+    args = parser.parse_args()
+    dry_run = args.dry_run
+
     if not DB.exists():
         print("DB not found:", DB)
         return 1
@@ -85,8 +93,12 @@ def main():
                 print(f"SKIP id={rid}: target exists {new_path}")
                 continue
             try:
-                path.rename(new_path)
-                print(f"Renamed file: {path.name} -> {new_name}")
+                if dry_run:
+                    print(
+                        f"[dry-run] Would rename file: {path.name} -> {new_name}")
+                else:
+                    path.rename(new_path)
+                    print(f"Renamed file: {path.name} -> {new_name}")
             except OSError as e:
                 print(f"Failed to rename {path} -> {new_path}: {e}")
                 continue
@@ -104,10 +116,15 @@ def main():
                             f"SKIP thumb for id={rid}: target exists {new_tpath}")
                     else:
                         try:
-                            tpath.rename(new_tpath)
-                            print(
-                                f"Renamed thumb: {tpath.name} -> {new_thumb_name}")
-                            new_thumb_url = f"/media/Thumbnails/{new_thumb_name}"
+                            if dry_run:
+                                print(
+                                    f"[dry-run] Would rename thumb: {tpath.name} -> {new_thumb_name}")
+                                new_thumb_url = f"/media/Thumbnails/{new_thumb_name}"
+                            else:
+                                tpath.rename(new_tpath)
+                                print(
+                                    f"Renamed thumb: {tpath.name} -> {new_thumb_name}")
+                                new_thumb_url = f"/media/Thumbnails/{new_thumb_name}"
                         except OSError as e:
                             print(
                                 f"Failed to rename thumb {tpath} -> {new_tpath}: {e}")

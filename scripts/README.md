@@ -55,3 +55,61 @@ Removed / consolidated files
   - `db_recent.py`
 
 If you want these scripts moved into a different folder or packaged as commands, tell me where and I can update paths and imports accordingly.
+
+## Methodology: handling future downloads and existing (already-downloaded) files
+
+When you get a new download (from `UniversalMediaDownloader.py` or otherwise), follow these simple steps:
+
+1. New downloads you create with the CLI (recommended)
+
+   - Run `python UniversalMediaDownloader.py` and provide the URL when prompted.
+   - By default the downloader writes into the `Downloads/` folder. After download finishes, run the maintenance commands below or use `auto_register.py` to ensure the app registers the file in the DB.
+
+2. Files already in `Downloads/` but not registered in the DB
+
+   - Use the maintenance scan to detect and register files:
+
+     ```powershell
+     python scripts/manage_media.py scan-fix-paths
+     python scripts/manage_media.py populate-meta
+     python scripts/manage_media.py fill-durations
+     ```
+
+   - Or run the interactive helper which moves/copies a file into place and runs the same steps:
+
+     ```powershell
+     python scripts/auto_register.py
+     ```
+
+3. DB row exists but file is missing or path incorrect
+
+   - Inspect recent rows to find the `id`:
+
+     ```powershell
+     python scripts/inspect_db.py
+     ```
+
+   - Fix the record interactively (no flags required):
+
+     ```powershell
+     python scripts/fix_download.py
+     ```
+
+4. Verify serving and playback
+
+   - Quick API/media check (interactive):
+
+     ```powershell
+     python scripts/api_check.py
+     python scripts/check_id_range.py
+     ```
+
+   - Open the frontend and confirm playback: http://localhost:5173
+
+Tips
+
+- Prefer `inspect_db.py` first to avoid guessing ids or file paths.
+- `auto_register.py` is convenient for one-off files you want to import and register automatically.
+- If you have many files to import, ask me to add a bulk-import helper that will iterate a directory and run the same registration steps.
+
+If you'd like, I can add these commands to a PowerShell snippet or a `scripts/README_QUICK.md` with copy/pasteable commands.

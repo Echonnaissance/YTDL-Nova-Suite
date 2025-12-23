@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Check HEAD range support for a specific download ID."""
-import sys
-import json
-import urllib.request
-import urllib.parse
+"""check_id_range.py - interactive helper to inspect a single download id and HEAD its media URL
 
-ID = sys.argv[1] if len(sys.argv) > 1 else '51'
-API = f'http://127.0.0.1:8000/api/downloads/{ID}'
-BASE = 'http://127.0.0.1:8000'
+No CLI args required; you'll be prompted for an id (default 51).
+"""
+import urllib.parse
+import urllib.request
+import urllib.error
+import json
+import sys
 
 
 def fetch_json(url):
@@ -24,18 +24,34 @@ def head_request(url):
             for k, v in r.getheaders():
                 print(f'{k}: {v}')
     except urllib.error.HTTPError as e:
-        print('HEAD HTTPError:', e.code)
-        for k, v in e.headers.items():
-            print(f'{k}: {v}')
+        code = getattr(e, 'code', None)
+        print('HEAD HTTPError:', code)
+        headers = getattr(e, 'headers', None)
+        if headers:
+            try:
+                for k, v in headers.items():
+                    print(f'{k}: {v}')
+            except Exception:
+                pass
+    except urllib.error.URLError as e:
+        print('HEAD URLError:', getattr(e, 'reason', str(e)))
 
 
 def main():
+    default_id = '51'
+    id_in = input(f'Enter download id [{default_id}]: ').strip() or default_id
+    API = f'http://127.0.0.1:8000/api/downloads/{id_in}'
+    BASE = 'http://127.0.0.1:8000'
     print('Fetching', API)
-    d = fetch_json(API)
+    try:
+        d = fetch_json(API)
+    except Exception as e:
+        print('Failed to fetch:', e)
+        sys.exit(2)
     print(json.dumps(d, indent=2, ensure_ascii=False))
     media = d.get('media_url')
     if not media:
-        print('No media_url for id', ID)
+        print('No media_url for id', id_in)
         return
     if media.startswith('/'):
         enc = urllib.parse.quote(media, safe='/')

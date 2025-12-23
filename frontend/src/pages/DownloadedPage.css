@@ -23,6 +23,10 @@
 
   /* Shadows */
   --video-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  /* Player title customization */
+  --player-title-font-size: 1.5rem;
+  --player-title-font-family: system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial;
 }
 
 [data-theme="dark"],
@@ -75,7 +79,13 @@
   align-items: stretch;
   max-width: none;
   margin: 0;
-  width: 100%;
+}
+
+/* Visual hint when dragging files over the page */
+.downloaded-container.dragover {
+  outline: 3px dashed rgba(0, 120, 215, 0.22);
+  outline-offset: 6px;
+  transition: outline 120ms ease;
 }
 
 .player-column {
@@ -117,24 +127,43 @@
 
 .video-wrapper {
   width: 100%;
-  aspect-ratio: 16 / 9;
-  /* cap video height relative to viewport so it stays visible on-screen */
+  /* cap video+controls height relative to viewport so it stays visible on-screen */
   max-height: calc(100vh - 140px);
   margin: 0;
-  background: var(--player-bg);
   border-radius: 6px;
-  overflow: hidden;
-  position: relative;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
 
 .main-player {
   background: var(--player-bg);
-  border-radius: 6px;
   display: block;
   object-fit: contain;
   width: 100%;
   height: 100%;
-  border: 1px solid var(--border-color);
+}
+
+/* container that preserves the video's aspect ratio while keeping controls
+   outside the video area but within the player card */
+.video-element {
+  width: 100%;
+  /* Allow JS to set actual aspect via --video-aspect (format like "16/9").
+     Fallback to 16/9 when not set. */
+  aspect-ratio: var(--video-aspect, 16/9);
+  background: var(--player-bg);
+  border-radius: 6px 6px 0 0;
+  overflow: hidden;
+}
+
+.video-wrapper .player-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border-color);
 }
 
 /* Theater overlay */
@@ -192,6 +221,69 @@
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  /* center the controls horizontally and allow them to shrink/grow */
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.controls-left {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.title-row {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.desc-toggle {
+  padding: 0.15rem 0.4rem;
+  font-size: 0.9rem;
+}
+
+.player-controls {
+  position: relative;
+}
+
+.player-desc {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0.45rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  min-width: 220px;
+  max-width: 60ch;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  z-index: 60;
+}
+.player-desc .desc-row {
+  margin-bottom: 0.25rem;
+}
+.file-path-small {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono",
+    "Courier New", monospace;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.file-path-small {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono",
+    "Courier New", monospace;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.controls-right {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .controls-bar .control {
@@ -232,17 +324,20 @@
   width: var(--list-width);
   /* Make the sidebar sticky at the same top offset as the video wrapper
      and let it fill down to the bottom of the viewport so it's flush with the screen. */
-  position: sticky;
-  top: var(--player-viewport-top, 0px);
-  height: calc(100vh - var(--player-viewport-top, 0px) - 8px);
+  position: static;
+  /* Align the list column to the visible video area measured in JS. */
+  top: var(--player-visible-top-offset, 0px);
+  height: var(--player-visible-height, auto);
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
+  overflow-wrap: break-word;
+  text-align: justify;
   border: 1px solid var(--border-color);
   padding: 0.5rem;
   border-radius: 6px;
   background: var(--bg-secondary);
   scrollbar-width: none;
-  align-self: flex-start;
+  align-self: start;
 }
 
 /* place list in right grid area */
@@ -255,7 +350,7 @@
   .downloaded-container {
     grid-template-columns: 1fr;
     grid-template-areas: "player" "list";
-    height: auto;
+    max-height: auto;
   }
   .list-column {
     width: 100%;
@@ -275,7 +370,7 @@
   padding: 0.5rem 0.75rem;
   cursor: pointer;
   border-radius: 6px;
-  align-items: flex-end;
+  align-items: start;
 }
 .list-item:hover {
   background: var(--nav-hover-bg);
@@ -347,13 +442,208 @@
   word-break: break-all;
 }
 .player-title {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.35rem 0;
   color: var(--text, inherit);
+  font-size: 1rem;
+  font-weight: 600;
+  display: block;
+  /* allow long titles to wrap instead of forcing layout */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+/* Header area for player title above controls */
+.player-header {
+  padding: 0.45rem 0.5rem 0 0.5rem;
+}
+
+/* Up Next / Replay overlay */
+.upnext-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.upnext-overlay .upnext-card {
+  pointer-events: auto;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.45));
+  color: white;
+  padding: 0.6rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: 80%;
+}
+.upnext-thumb {
+  width: 110px;
+  height: 62px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--thumb-bg);
+}
+.upnext-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.upnext-label {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+.upnext-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  max-width: 40ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.upnext-countdown {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+.upnext-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
 }
 
 /* Accessibility helpers */
 .list-item:focus {
   outline: 2px solid rgba(0, 120, 215, 0.25);
+}
+
+/* List header with toggle */
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 0.35rem;
+  margin-bottom: 0.35rem;
+}
+.list-header-title {
+  font-weight: 600;
+}
+.list-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.nav-mode-select {
+  padding: 0.15rem 0.35rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* ---------------- Local folder grid (preview) ---------------- */
+.local-grid {
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-elevated);
+  border-radius: 6px;
+}
+.local-grid-heading {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+.local-grid-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.5rem;
+}
+.local-grid-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: stretch;
+  padding: 0.35rem;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 120ms ease;
+  overflow: hidden;
+}
+.local-grid-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  background: var(--nav-hover-bg);
+}
+.local-grid-item.active {
+  border: 1px solid var(--accent, rgba(0, 120, 215, 0.9));
+  background: var(--list-active-bg);
+}
+.local-preview-video {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--thumb-bg);
+  display: block;
+}
+.grid-title {
+  font-size: 0.85rem;
+  color: var(--text, inherit);
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* More options / description area in player details */
+.player-details-section {
+  margin-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.more-options-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.more-btn {
+  padding: 0.2rem 0.45rem;
+}
+.more-options-menu {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  padding: 0.4rem;
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+.more-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+.desc-toggle-bottom {
+  align-self: flex-start;
+  padding: 0.25rem 0.5rem;
+}
+.player-desc-btm {
+  background: transparent;
+  padding: 0.45rem 0.5rem;
+  border-radius: 6px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+.player-desc-btm .desc-row {
+  font-size: 0.9rem;
+  color: var(--text-muted);
 }
 
 /* End of file */

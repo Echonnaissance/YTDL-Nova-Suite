@@ -45,6 +45,9 @@ class Settings(BaseSettings):
         "http://localhost:5173",  # Vite default port
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
+        # IPv6 localhost entries to support browsers that resolve 'localhost' to ::1
+        "http://[::1]:3000",
+        "http://[::1]:5173",
     ]
 
     # Database Settings
@@ -117,7 +120,11 @@ class Settings(BaseSettings):
     # For local smoke testing default to user's Downloads. Set via .env in production/dev.
     ALLOW_LOCAL_MEDIA: bool = True
     EXTRA_MEDIA_DIRS: List[Path] = [
-        Path(r"C:/Users/Anthony Ferraro/Downloads")]
+        Path(r"C:/Users/Anthony Ferraro/Downloads"),
+        # Add local folders you trust here so the backend can serve them.
+        # Example: E:/Stuff/Videos to allow E:\\Stuff\\Videos\\Other
+        Path(r"E:/Stuff"),
+    ]
     # Request Size Limits (in bytes)
     MAX_REQUEST_SIZE: int = 1024 * 1024  # 1 MB
 

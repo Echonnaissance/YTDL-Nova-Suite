@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 import os
 import sys
+import argparse
 
 REPO = Path(__file__).resolve().parents[1]
 DB = REPO / 'backend' / 'universal_media_downloader.db'
@@ -75,6 +76,13 @@ def make_thumbnail(ffmpeg, src: str, dst: str):
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description='Populate metadata and thumbnails')
+    parser.add_argument('--dry-run', action='store_true',
+                        help='Show actions without making changes')
+    args = parser.parse_args()
+    dry_run = args.dry_run
+
     if not DB.exists():
         print('DB not found:', DB)
         sys.exit(1)
@@ -98,6 +106,25 @@ def main():
     updated = 0
     created_thumbs = 0
 
+    # build set of used thumbnail indices (files named Thumbnail_<n>.jpg)
+    used_indices = set()
+    thumb_re = re.compile(r'^Thumbnail_(\d+)\.jpg$', re.IGNORECASE)
+    for existing in THUMBS_DIR.glob('Thumbnail_*.jpg'):
+        m = thumb_re.match(existing.name)
+        if m:
+            try:
+                used_indices.add(int(m.group(1)))
+            except Exception:
+                pass
+
+    def get_next_thumbnail_name():
+        # find smallest unused positive integer
+        i = 1
+        while i in used_indices:
+            i += 1
+        used_indices.add(i)
+        return f"Thumbnail_{i:02d}.jpg"
+
     for rid, fpath, thumb in rows:
         if not fpath:
             continue
@@ -110,26 +137,64 @@ def main():
         file_name = p.name
         duration = get_duration(ffmpeg, str(p))
 
-        # create thumbnail file name safe
-        thumb_name = f"{rid}_{p.stem}.jpg"
-        thumb_path = THUMBS_DIR / thumb_name
-        thumb_url = f"/media/Thumbnails/{thumb_name}"
-
+        # Determine whether a valid thumbnail already exists (from DB)
         thumb_created = False
-        if not thumb_path.exists():
-            thumb_created = make_thumbnail(ffmpeg, str(p), str(thumb_path))
-            if thumb_created:
+        thumb_url = None
+
+        if thumb and thumb.startswith('/media/Thumbnails'):
+            existing_name = thumb.split('/')[-1]
+            existing_path = THUMBS_DIR / existing_name
+            if existing_path.exists() and existing_path.stat().st_size > 0:
+                # existing valid thumbnail — keep it
+                thumb_url = thumb
+            else:
+                # referenced thumbnail missing — create a new numbered thumbnail
+                new_name = get_next_thumbnail_name()
+                new_path = THUMBS_DIR / new_name
+                if dry_run:
+                    print(
+                        f"[dry-run] Would create thumbnail: {new_path} for {p}")
+                    thumb_created = True
+                    created_thumbs += 1
+                    thumb_url = f"/media/Thumbnails/{new_name}"
+                else:
+                    if make_thumbnail(ffmpeg, str(p), str(new_path)):
+                        thumb_created = True
+                        created_thumbs += 1
+                        thumb_url = f"/media/Thumbnails/{new_name}"
+        else:
+            # No existing thumbnail referenced — create a new numbered thumbnail
+            new_name = get_next_thumbnail_name()
+            new_path = THUMBS_DIR / new_name
+            if dry_run:
+                print(f"[dry-run] Would create thumbnail: {new_path} for {p}")
+                thumb_created = True
                 created_thumbs += 1
+                thumb_url = f"/media/Thumbnails/{new_name}"
+            else:
+                if make_thumbnail(ffmpeg, str(p), str(new_path)):
+                    thumb_created = True
+                    created_thumbs += 1
+                    thumb_url = f"/media/Thumbnails/{new_name}"
 
         # update DB fields (only set if value present)
-        cur.execute("UPDATE downloads SET file_size=?, file_name=? WHERE id=?",
-                    (file_size, file_name, rid))
-        if duration is not None:
-            cur.execute(
-                "UPDATE downloads SET duration=? WHERE id=?", (duration, rid))
-        if thumb_created or (thumb and thumb.startswith('/media/Thumbnails')):
-            cur.execute(
-                "UPDATE downloads SET thumbnail_url=? WHERE id=?", (thumb_url, rid))
+        if dry_run:
+            print(
+                f"[dry-run] Would update DB id={rid}: file_size={file_size}, file_name={file_name}")
+            if duration is not None:
+                print(f"[dry-run] Would set duration={duration} for id={rid}")
+            if thumb_url:
+                print(
+                    f"[dry-run] Would set thumbnail_url={thumb_url} for id={rid}")
+        else:
+            cur.execute("UPDATE downloads SET file_size=?, file_name=? WHERE id=?",
+                        (file_size, file_name, rid))
+            if duration is not None:
+                cur.execute(
+                    "UPDATE downloads SET duration=? WHERE id=?", (duration, rid))
+            if thumb_url:
+                cur.execute(
+                    "UPDATE downloads SET thumbnail_url=? WHERE id=?", (thumb_url, rid))
 
         updated += 1
 
